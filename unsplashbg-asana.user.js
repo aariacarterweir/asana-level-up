@@ -13,7 +13,7 @@
 var unsplashbg = {
     options: {
         interval: 60 * 1000, // (seconds) * 1000
-        size: '1280x720'
+        size: '1920x1080'
     }
 };
 

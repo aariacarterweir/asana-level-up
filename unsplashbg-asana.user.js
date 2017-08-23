@@ -41,6 +41,8 @@ unsplashbg.changeBg = function() {
                     'background-position: top center; ' +
                     'background-size: cover; ' +
                     'background-repeat: no-repeat;' +
+                    '-webkit-transition: background-image 0.5s ease-in-out; ' +
+                    'transition: background-image 0.5s ease-in-out; ' +
                 '}';
             document.head.appendChild(DLstyle);
       }

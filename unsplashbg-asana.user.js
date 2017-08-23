@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     1.0
+// @version     1.5
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==

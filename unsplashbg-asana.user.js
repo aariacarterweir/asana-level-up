@@ -59,6 +59,8 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
                                         'background-color: rgba(255,255,255,0.955); '+
                                     '}' +
 
+                                    '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +
+
                                     '.SingleTaskTitleRow-taskName textarea, ' +
                                     '.Tokenizer' +
                                     '{' +

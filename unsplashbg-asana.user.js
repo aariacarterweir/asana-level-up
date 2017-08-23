@@ -12,7 +12,8 @@
 // namespace
 var unsplashbg = {
     options: {
-        interval: 60 * 1000 // (seconds) * 1000
+        interval: 60 * 1000, // (seconds) * 1000
+        size: '1280x720'
     }
 };
 
@@ -20,7 +21,7 @@ var unsplashbg = {
 unsplashbg.changeBg = function() {
     GM_xmlhttpRequest({
       method: 'GET',
-      url: 'https://source.unsplash.com/random/1000x562',
+      url: 'https://source.unsplash.com/random/' + unsplashbg.options.size,
       headers: {
         'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
         'Accept': 'text/xml' // If not specified, browser defaults will be used.

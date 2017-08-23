@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     1.5
+// @version     1.6
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==
@@ -12,8 +12,9 @@
 // namespace
 var unsplashbg = {
     options: {
-        interval: 60 * 1000, // (seconds) * 1000
-        size: '1920x1080'
+        interval: 30 * 1000, // (seconds) * 1000
+        size: '1920x1080',
+        transitionDuration : '1s'
     }
 };
 
@@ -41,8 +42,8 @@ unsplashbg.changeBg = function() {
                     'background-position: top center; ' +
                     'background-size: cover; ' +
                     'background-repeat: no-repeat;' +
-                    '-webkit-transition: background-image 0.5s ease-in-out; ' +
-                    'transition: background-image 0.5s ease-in-out; ' +
+                    '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+                    'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
                 '}';
             document.head.appendChild(DLstyle);
       }

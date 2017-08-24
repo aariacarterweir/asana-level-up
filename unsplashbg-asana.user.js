@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     1.6
+// @version     1.7
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==
@@ -12,7 +12,7 @@
 // namespace
 var unsplashbg = {
     options: {
-        interval: 30 * 1000, // (seconds) * 1000
+        interval: 20 * 1000, // (seconds) * 1000
         size: '1920x1080',
         transitionDuration : '1s'
     }
@@ -20,6 +20,8 @@ var unsplashbg = {
 
 // change bg fn
 unsplashbg.changeBg = function() {
+    clearTimeout(unsplashbg.timer);
+    
     GM_xmlhttpRequest({
       method: 'GET',
       url: 'https://source.unsplash.com/random/' + unsplashbg.options.size,
@@ -28,24 +30,35 @@ unsplashbg.changeBg = function() {
         'Accept': 'text/xml' // If not specified, browser defaults will be used.
       },
       onload: function (response) {
-        // delete previous style
-        if (document.getElementById('unsplashbg-style')) {
-            document.getElementById('unsplashbg-style').outerHTML='';
-        }
+        
+        // preload the actual image now
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: response.finalUrl,
+            onload: function(r){
+                // delete previous style
+                if (document.getElementById('unsplashbg-style')) {
+                    document.getElementById('unsplashbg-style').outerHTML='';
+                }
 
-        // create new style
-        var DLstyle = document.createElement("style");
-            DLstyle.setAttribute("id", "unsplashbg-style");
-            DLstyle.textContent = ' body, #bg_pattern ' +
-                '{' +
-                    'background-image: url("'+ response.finalUrl +'") !important; ' +
-                    'background-position: top center; ' +
-                    'background-size: cover; ' +
-                    'background-repeat: no-repeat;' +
-                    '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-                    'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-                '}';
-            document.head.appendChild(DLstyle);
+                // create new style
+                var DLstyle = document.createElement("style");
+                    DLstyle.setAttribute("id", "unsplashbg-style");
+                    DLstyle.textContent = ' body, #bg_pattern ' +
+                        '{' +
+                            'background-image: url("'+ response.finalUrl +'") !important; ' +
+                            'background-position: top center; ' +
+                            'background-size: cover; ' +
+                            'background-repeat: no-repeat;' +
+                            '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+                            'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+                        '}';
+                    document.head.appendChild(DLstyle);
+
+                // kick off another timer
+                unsplashbg.timer = setTimeout(unsplashbg.changeBg, unsplashbg.options.interval);
+            }
+        });
       }
     });
 };
@@ -73,6 +86,3 @@ document.head.appendChild(unsplashbg.basestyles);
 
 // call the fn
 unsplashbg.changeBg();
-
-// set up an interval
-unsplashbg.interval = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);

@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     1.8
+// @version     2.0
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==
@@ -14,7 +14,7 @@ var unsplashbg = {
     options: {
         interval: 20 * 1000, // (seconds) * 1000
         size: '1920x1080',
-        transitionDuration : '1s',
+        transitionDuration : '2s',
         path: 'user/aariacarterweir/likes' // no trailing slash pls
     }
 };
@@ -39,7 +39,7 @@ unsplashbg.changeBg = function() {
             onload: function(r){
                 // delete previous style
                 if (document.getElementById('unsplashbg-style')) {
-                    document.getElementById('unsplashbg-style').outerHTML='';
+                    document.getElementById('unsplashbg-style').setAttribute('id', 'unsplash-style-old');
                 }
 
                 // create new style
@@ -48,13 +48,12 @@ unsplashbg.changeBg = function() {
                     DLstyle.textContent = ' body, #bg_pattern ' +
                         '{' +
                             'background-image: url("'+ response.finalUrl +'") !important; ' +
-                            'background-position: top center; ' +
-                            'background-size: cover; ' +
-                            'background-repeat: no-repeat;' +
-                            '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-                            'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
                         '}';
-                    document.head.appendChild(DLstyle);
+                document.head.appendChild(DLstyle);
+
+                if (document.getElementById('unsplashbg-style-old')) {
+                    document.getElementById('unsplashbg-style-old').outerHTML = '';
+                }
 
                 // kick off another timer
                 unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
@@ -74,6 +73,14 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
                                     '.asana2View-taskPane ' +
                                     '{' +
                                         'background-color: rgba(255,255,255,0.955); '+
+                                    '}' +
+
+                                    'body, #bg_pattern {' +
+                                        'background-position: top center; ' +
+                                        'background-size: cover; ' +
+                                        'background-repeat: no-repeat;' +
+                                        '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+                                        'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
                                     '}' +
 
                                     '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +

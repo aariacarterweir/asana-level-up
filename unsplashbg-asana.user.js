@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     1.7
+// @version     1.8
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==
@@ -14,17 +14,18 @@ var unsplashbg = {
     options: {
         interval: 20 * 1000, // (seconds) * 1000
         size: '1920x1080',
-        transitionDuration : '1s'
+        transitionDuration : '1s',
+        path: 'user/aariacarterweir/likes' // no trailing slash pls
     }
 };
 
 // change bg fn
 unsplashbg.changeBg = function() {
-    clearTimeout(unsplashbg.timer);
+    clearInterval(unsplashbg.timer);
     
     GM_xmlhttpRequest({
       method: 'GET',
-      url: 'https://source.unsplash.com/random/' + unsplashbg.options.size,
+      url: 'https://source.unsplash.com/' + unsplashbg.options.path + '/' + unsplashbg.options.size,
       headers: {
         'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
         'Accept': 'text/xml' // If not specified, browser defaults will be used.
@@ -56,7 +57,7 @@ unsplashbg.changeBg = function() {
                     document.head.appendChild(DLstyle);
 
                 // kick off another timer
-                unsplashbg.timer = setTimeout(unsplashbg.changeBg, unsplashbg.options.interval);
+                unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
             }
         });
       }

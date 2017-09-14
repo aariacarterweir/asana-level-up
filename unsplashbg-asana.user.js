@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.1
+// @version     2.2
 // @grant GM_xmlhttpRequest
 // @run-at document-ready
 // ==/UserScript==
@@ -76,10 +76,13 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     'background-color: rgba(255,255,255,0.955); '+
     '}' +
 
-    'body, #bg_pattern { ' +
-    '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden;' +
-    'backface-visibility: hidden;  ' +
-    'background-position: top center; ' +
+    '#bg_pattern { ' +
+    // enhance performance
+    '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
+    'backface-visibility: hidden; -webkit-transform: translateZ(0); ' +
+
+    // layout
+    'background-position: center center; ' +
     'background-size: cover; ' +
     'background-repeat: no-repeat;' +
     '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
@@ -87,12 +90,7 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     '}' +
 
     '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +
-
-    '.SingleTaskTitleRow-taskName textarea, ' +
-    '.Tokenizer' +
-    '{' +
-    'background: transparent !important;' +
-    '}';
+    '.SingleTaskTitleRow-taskName textarea, .Tokenizer { background: transparent !important; }';
 document.head.appendChild(unsplashbg.basestyles);
 
 // call the fn
@@ -101,7 +99,7 @@ unsplashbg.changeBg();
 
 // register a key binding
 $(document).bind('keydown', function(e){
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 190) {
+    if(e.ctrlKey && e.shiftKey && e.which === 190) {
         unsplashbg.changeBg();
     }
 });

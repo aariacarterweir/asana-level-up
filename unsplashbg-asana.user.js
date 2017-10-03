@@ -4,8 +4,9 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.2
+// @version     2.3
 // @grant GM_xmlhttpRequest
+// @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
 // ==/UserScript==
 
@@ -33,33 +34,25 @@ unsplashbg.changeBg = function() {
             'Accept': 'text/xml' // If not specified, browser defaults will be used.
         },
         onload: function (response) {
+            // create new style
+            var DLstyle = document.createElement("style");
+            DLstyle.textContent = ' body, #bg_pattern ' +
+                '{' +
+                'background-image: url("'+ response.finalUrl +'") !important; ' +
+                '}';
+            document.head.appendChild(DLstyle);
+            unsplashbg.styles.push(DLstyle);
 
-            // preload the actual image now
-            GM_xmlhttpRequest({
-                method: 'GET',
-                url: response.finalUrl,
-                onload: function(r){
-                    // create new style
-                    var DLstyle = document.createElement("style");
-                    DLstyle.textContent = ' body, #bg_pattern ' +
-                        '{' +
-                        'background-image: url("'+ response.finalUrl +'") !important; ' +
-                        '}';
-                    document.head.appendChild(DLstyle);
-                    unsplashbg.styles.push(DLstyle);
+            var oldStyle;
+            if ( (oldStyle = unsplashbg.styles[unsplashbg.styles.length - 2]) ) {
+                // cleanup later...
+                setTimeout(function(){
+                    oldStyle.outerHTML = '';
+                }, 20000);
+            }
 
-                    var oldStyle;
-                    if ( (oldStyle = unsplashbg.styles[unsplashbg.styles.length - 2]) ) {
-                        // cleanup later...
-                        setTimeout(function(){
-                            oldStyle.outerHTML = '';
-                        }, 10000);
-                    }
-
-                    // kick off another timer
-                    unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
-                }
-            });
+            // kick off another timer
+            unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
         }
     });
 };
@@ -95,7 +88,6 @@ document.head.appendChild(unsplashbg.basestyles);
 
 // call the fn
 unsplashbg.changeBg();
-
 
 // register a key binding
 $(document).bind('keydown', function(e){

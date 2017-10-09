@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.3
+// @version     2.4
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -16,7 +16,7 @@ var unsplashbg = {
         interval: 30 * 1000, // (seconds) * 1000
         size: '1920x1080',
         transitionDuration : '2s',
-        path: 'user/aariacarterweir/likes' // no trailing slash pls
+        path: 'collection/1266904' // no trailing slash pls
     }
 };
 

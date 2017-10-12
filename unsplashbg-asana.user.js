@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.5.1
+// @version     2.6
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -24,7 +24,12 @@ var unsplashbg = {
         //path: 'collection/1266904'
 
         // generic Welcome to LA collection
-        path: 'collection/1171747'
+        //path: 'collection/1171747',
+
+        path: '',
+
+        // comma separated search terms
+        searchTerm: 'los angeles,la,sunset'
     }
 };
 
@@ -34,9 +39,23 @@ unsplashbg.styles = [];
 unsplashbg.changeBg = function() {
     clearInterval(unsplashbg.timer);
 
+    var url = 'https://source.unsplash.com/';
+
+    if (unsplashbg.options.path) {
+        url += unsplashbg.options.path + '/';
+    }
+
+    if (unsplashbg.options.size) {
+        url+= unsplashbg.options.size + '/';
+    }
+
+    if (unsplashbg.options.searchTerm) {
+        url += '?' + encodeURI(unsplashbg.options.searchTerm)
+    }
+
     GM_xmlhttpRequest({
         method: 'GET',
-        url: 'https://source.unsplash.com/' + unsplashbg.options.path + '/' + unsplashbg.options.size,
+        url: url,
         headers: {
             'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
             'Accept': 'text/xml' // If not specified, browser defaults will be used.
@@ -103,3 +122,7 @@ $(document).bind('keydown', function(e){
         unsplashbg.changeBg();
     }
 });
+
+console.log('UnsplashBG running');
+console.log('Press CTRL+SHIFT+. to change bg');
+console.log('Otherwise, bg will change every ' + unsplashbg.options.interval / 1000 + ' seconds');

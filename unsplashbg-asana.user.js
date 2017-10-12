@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.5
+// @version     2.5.1
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -13,7 +13,7 @@
 // namespace
 var unsplashbg = {
     options: {
-        interval: 30 * 1000, // (seconds) * 1000
+        interval: 120 * 1000, // (seconds) * 1000
         size: '1920x1080',
         transitionDuration : '2s',
 

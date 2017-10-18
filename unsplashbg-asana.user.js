@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.6
+// @version     2.7
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -29,7 +29,7 @@ var unsplashbg = {
         path: '',
 
         // comma separated search terms
-        searchTerm: 'los angeles,la,sunset'
+        searchTerm: 'street art, cute dogs'
     }
 };
 

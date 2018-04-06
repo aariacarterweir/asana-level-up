@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.9
+// @version     2.9.1
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -122,7 +122,7 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
 
     // unsplash icon
     '.unsplash-link { text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 18px; opacity: 0.7; } ' +
-    '.unsplash-link:hover { text-decoration: none; opacity: 1; }';
+    '.unsplash-link:hover, .unsplash-link:active, .unsplash-link:visited { text-decoration: none; opacity: 1; }';
 document.head.appendChild(unsplashbg.basestyles);
 
 // call the fn

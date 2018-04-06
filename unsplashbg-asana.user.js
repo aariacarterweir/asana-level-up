@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.8
+// @version     2.9
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -80,6 +80,14 @@ unsplashbg.changeBg = function() {
 
             // kick off another timer
             unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
+
+            // Add in the link if necessary
+            if (!$('.unsplash-link').length) {
+                $('<a href="" class="unsplash-link" target="_blank">&#128247;</a>').appendTo($('body'));
+            }
+
+            // Update link with url to image
+            $('.unsplash-link').attr('href', response.finalUrl);
         }
     });
 };
@@ -93,24 +101,28 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     'body #right_pane_container #right_pane, ' +
     '.asana2View-taskPane ' +
     '{' +
-    'background-color: rgba(255,255,255,0.955); '+
+        'background-color: rgba(255,255,255,0.955); '+
     '}' +
 
     '#bg_pattern { ' +
-    // enhance performance
-    '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
-    'backface-visibility: hidden; -webkit-transform: translateZ(0); ' +
+        // enhance performance
+        '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
+        'backface-visibility: hidden; -webkit-transform: translateZ(0); ' +
 
-    // layout
-    'background-position: center center; ' +
-    'background-size: cover; ' +
-    'background-repeat: no-repeat;' +
-    '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-    'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+        // layout
+        'background-position: center center; ' +
+        'background-size: cover; ' +
+        'background-repeat: no-repeat;' +
+        '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
+        'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
     '}' +
 
     '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +
-    '.SingleTaskTitleRow-taskName textarea, .Tokenizer { background: transparent !important; }';
+    '.SingleTaskTitleRow-taskName textarea, .Tokenizer { background: transparent !important; } ' +
+
+    // unsplash icon
+    '.unsplash-link { text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 18px; opacity: 0.7; } ' +
+    '.unsplash-link:hover { text-decoration: none; opacity: 1; }';
 document.head.appendChild(unsplashbg.basestyles);
 
 // call the fn
@@ -126,3 +138,4 @@ $(document).bind('keydown', function(e){
 console.log('UnsplashBG running');
 console.log('Press CTRL+SHIFT+. to change bg');
 console.log('Otherwise, bg will change every ' + unsplashbg.options.interval / 1000 + ' seconds');
+console.log('Use the camera icon in the bottom left of the window to view the image directly');

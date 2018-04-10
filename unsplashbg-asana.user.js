@@ -4,11 +4,15 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     2.9.2
+// @version     3.0.0
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
 // ==/UserScript==
+
+/** Change Log
+ * - Added user configurable search terms saved in localstorage
+ */
 
 // namespace
 var unsplashbg = {
@@ -29,7 +33,29 @@ var unsplashbg = {
         path: '',
 
         // comma separated search terms
-        searchTerm: 'nautical, boat, sea, sunset, los angeles'
+        searchTermDefault: 'nautical, boat, sea, sunset',
+
+        // search term
+        searchTerm: ''
+    }
+};
+
+
+unsplashbg.userSearchTerm = function(reset) {
+    var key = 'unsplash-search-term';
+
+    // set search term
+    if (!localStorage.getItem(key) || reset === true) {
+        localStorage.setItem(key, prompt("Enter your search term for unsplash or leave blank to use the default. " +
+            "Search terms are separated by commas. Default: " + unsplashbg.options.searchTermDefault));
+    }
+
+    // save the search term - either use the default or whatever the user has entered
+    unsplashbg.options.searchTerm = localStorage.getItem('unsplash-search-term') || unsplashbg.options.searchTermDefault;
+    localStorage.setItem(key, unsplashbg.options.searchTerm);
+
+    if (reset === true) {
+        unsplashbg.changeBg();
     }
 };
 
@@ -60,34 +86,42 @@ unsplashbg.changeBg = function() {
             'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
             'Accept': 'text/xml' // If not specified, browser defaults will be used.
         },
+
         onload: function (response) {
-            // create new style
-            var DLstyle = document.createElement("style");
-            DLstyle.textContent = ' body, #bg_pattern ' +
-                '{' +
-                'background-image: url("'+ response.finalUrl +'") !important; ' +
-                '}';
-            document.head.appendChild(DLstyle);
-            unsplashbg.styles.push(DLstyle);
 
-            var oldStyle;
-            if ( (oldStyle = unsplashbg.styles[unsplashbg.styles.length - 2]) ) {
-                // cleanup later...
-                setTimeout(function(){
-                    oldStyle.outerHTML = '';
-                }, 20000);
-            }
+            var tmp = new Image();
 
-            // kick off another timer
-            unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
+            tmp.onload = function(){
+                // create new style
+                var DLstyle = document.createElement("style");
+                DLstyle.textContent = ' body, #bg_pattern ' +
+                    '{' +
+                    'background-image: url("'+ response.finalUrl +'") !important; ' +
+                    '}';
+                document.head.appendChild(DLstyle);
+                unsplashbg.styles.push(DLstyle);
 
-            // Add in the link if necessary
-            if (!$('.unsplash-link').length) {
-                $('<a href="" class="unsplash-link" target="_blank">&#128247;</a>').appendTo($('body'));
-            }
+                var oldStyle;
+                if ( (oldStyle = unsplashbg.styles[unsplashbg.styles.length - 2]) ) {
+                    // cleanup later...
+                    setTimeout(function(){
+                        oldStyle.outerHTML = '';
+                    }, 20000);
+                }
 
-            // Update link with url to image
-            $('.unsplash-link').attr('href', response.finalUrl);
+                // kick off another timer
+                unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
+
+                // Add in the link if necessary
+                if (!$('.unsplash-link').length) {
+                    $('<a href="" class="unsplash-link" target="_blank">&#128247;</a>').appendTo($('body'));
+                }
+
+                // Update link with url to image
+                $('.unsplash-link').attr('href', response.finalUrl);
+            };
+
+            tmp.src = response.finalUrl;
         }
     });
 };
@@ -107,7 +141,7 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     '#bg_pattern { ' +
         // enhance performance
         '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
-        'backface-visibility: hidden; -webkit-transform: translateZ(0); ' +
+        'backface-visibility: hidden; ' +
 
         // layout
         'background-position: center center; ' +
@@ -125,17 +159,25 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     '.unsplash-link:hover, .unsplash-link:active, .unsplash-link:visited, .unsplash-link:focus { text-decoration: none; opacity: 1; }';
 document.head.appendChild(unsplashbg.basestyles);
 
-// call the fn
+// call the fns
+unsplashbg.userSearchTerm();
 unsplashbg.changeBg();
 
 // register a key binding
 $(document).bind('keydown', function(e){
     if(e.ctrlKey && e.shiftKey && e.which === 190) {
-        unsplashbg.changeBg();
+        return unsplashbg.changeBg();
+    }
+
+    if (e.ctrlKey && e.shiftKey && e.which === 188) {
+        unsplashbg.userSearchTerm(true);
     }
 });
 
+console.log('--------------------');
 console.log('UnsplashBG running');
 console.log('Press CTRL+SHIFT+. to change bg');
-console.log('Otherwise, bg will change every ' + unsplashbg.options.interval / 1000 + ' seconds');
-console.log('Use the camera icon in the bottom left of the window to view the image directly');
+console.log('Press CTRL+SHIFT+, to change search terms');
+console.log('BG will change every ' + unsplashbg.options.interval / 1000 + ' seconds');
+console.log('Use the camera icon in the bottom left of the window to view the image directly :)');
+console.log('--------------------');

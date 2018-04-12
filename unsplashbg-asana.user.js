@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     3.1.0
+// @version     3.1.1
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -38,6 +38,7 @@ var unsplashbg = {
         searchTermDefault: 'nautical, boat, sea, sunset',
 
         // search term
+        // to disable search term, set to 'no-search-term'
         searchTerm: ''
     }
 };
@@ -53,16 +54,18 @@ unsplashbg.userSearchTerm = function(reset) {
         if (!localStorage.getItem(keys[type]) || reset === true) {
             switch(type) {
                 case 'searchTerm':
-                    localStorage.setItem(keys[type], prompt("Enter your search term for unsplash or leave blank to use the default. " +
-                        "Search terms are separated by commas. You probably don't want to use a path AND a search term, so just set one or the other. Default: " + unsplashbg.options.searchTermDefault) || unsplashbg.options.searchTermDefault);
+                    localStorage.setItem(keys[type], prompt("Enter your search term for unsplash or leave blank to use the default. Set to 'no-search-term' to disable the search term. " +
+                        "Search terms are separated by commas. Default: " + unsplashbg.options.searchTermDefault) || unsplashbg.options.searchTermDefault);
                     break;
 
                 case 'path':
                     localStorage.setItem(keys[type], prompt("Enter your path for unsplash or leave blank to use the default. " +
-                        "No trailing slashes please! You probably don't want to use a path AND a search term, so just set one or the other. Default: '" + unsplashbg.options.pathDefault + "'") || unsplashbg.options.pathDefault);
+                        "No trailing or preceding slashes please! Eg: 'collection/1266904' Default: '" + unsplashbg.options.pathDefault + "'") || unsplashbg.options.pathDefault);
                     break;
             }
         }
+
+        unsplashbg.options[type] = localStorage.getItem(keys[type]);
     }
 
     if (reset === true) {
@@ -86,7 +89,7 @@ unsplashbg.changeBg = function() {
         url+= unsplashbg.options.size + '/';
     }
 
-    if (unsplashbg.options.searchTerm) {
+    if (unsplashbg.options.searchTerm && unsplashbg.options.searchTerm !== 'no-search-term') {
         url += '?' + encodeURI(unsplashbg.options.searchTerm)
     }
 

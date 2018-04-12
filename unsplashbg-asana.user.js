@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     3.0.0
+// @version     3.1.0
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -32,6 +32,8 @@ var unsplashbg = {
 
         path: '',
 
+        pathDefault: 'no-path',
+
         // comma separated search terms
         searchTermDefault: 'nautical, boat, sea, sunset',
 
@@ -42,17 +44,26 @@ var unsplashbg = {
 
 
 unsplashbg.userSearchTerm = function(reset) {
-    var key = 'unsplash-search-term';
+    var keys = {
+        searchTerm: 'unsplash-search-term',
+        path: 'unsplash-path'
+    };
 
-    // set search term
-    if (!localStorage.getItem(key) || reset === true) {
-        localStorage.setItem(key, prompt("Enter your search term for unsplash or leave blank to use the default. " +
-            "Search terms are separated by commas. Default: " + unsplashbg.options.searchTermDefault));
+    for (var type in keys) {
+        if (!localStorage.getItem(keys[type]) || reset === true) {
+            switch(type) {
+                case 'searchTerm':
+                    localStorage.setItem(keys[type], prompt("Enter your search term for unsplash or leave blank to use the default. " +
+                        "Search terms are separated by commas. You probably don't want to use a path AND a search term, so just set one or the other. Default: " + unsplashbg.options.searchTermDefault) || unsplashbg.options.searchTermDefault);
+                    break;
+
+                case 'path':
+                    localStorage.setItem(keys[type], prompt("Enter your path for unsplash or leave blank to use the default. " +
+                        "No trailing slashes please! You probably don't want to use a path AND a search term, so just set one or the other. Default: '" + unsplashbg.options.pathDefault + "'") || unsplashbg.options.pathDefault);
+                    break;
+            }
+        }
     }
-
-    // save the search term - either use the default or whatever the user has entered
-    unsplashbg.options.searchTerm = localStorage.getItem('unsplash-search-term') || unsplashbg.options.searchTermDefault;
-    localStorage.setItem(key, unsplashbg.options.searchTerm);
 
     if (reset === true) {
         unsplashbg.changeBg();
@@ -67,7 +78,7 @@ unsplashbg.changeBg = function() {
 
     var url = 'https://source.unsplash.com/';
 
-    if (unsplashbg.options.path) {
+    if (unsplashbg.options.path && unsplashbg.options.path !== 'no-path') {
         url += unsplashbg.options.path + '/';
     }
 
@@ -154,6 +165,28 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
     '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +
     '.SingleTaskTitleRow-taskName textarea, .Tokenizer { background: transparent !important; } ' +
 
+    'span.BoardColumnHeaderTitle {\n' +
+    '    background: rgba(255,255,255,0.7);\n' +
+    '    border-radius: 10px;\n' +
+    '    padding: 0 20px;\n' +
+    '}' +
+
+    '.BoardBody-descriptionLink {\n' +
+    '    background: rgba(255,255,255,0.4);\n' +
+    '    color: #000;\n' +
+    '    padding: 0 5px;\n' +
+    '}' +
+
+    'a.BoardBody-descriptionLink {\n' +
+    '    color: #000;\n' +
+    '}' +
+
+    '.FloatingSelect-label {\n' +
+    '    background: rgba(255,255,255,0.4);\n' +
+    '    color: #000;\n' +
+    '    padding: 0 5px;\n' +
+    '}' +
+
     // unsplash icon
     '.unsplash-link { text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 18px; opacity: 0.7; } ' +
     '.unsplash-link:hover, .unsplash-link:active, .unsplash-link:visited, .unsplash-link:focus { text-decoration: none; opacity: 1; }';
@@ -177,7 +210,7 @@ $(document).bind('keydown', function(e){
 console.log('--------------------');
 console.log('UnsplashBG running');
 console.log('Press CTRL+SHIFT+. to change bg');
-console.log('Press CTRL+SHIFT+, to change search terms');
+console.log('Press CTRL+SHIFT+, to change search terms / path');
 console.log('BG will change every ' + unsplashbg.options.interval / 1000 + ' seconds');
 console.log('Use the camera icon in the bottom left of the window to view the image directly :)');
 console.log('--------------------');

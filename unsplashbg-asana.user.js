@@ -4,7 +4,7 @@
 // @author      Ariana Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     3.1.1
+// @version     3.1.2
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @run-at document-ready
@@ -152,7 +152,7 @@ unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #ce
         'background-color: rgba(255,255,255,0.955); '+
     '}' +
 
-    '#bg_pattern { ' +
+    'body, #bg_pattern { ' +
         // enhance performance
         '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
         'backface-visibility: hidden; ' +

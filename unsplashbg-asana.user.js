@@ -1,15 +1,16 @@
 // ==UserScript==
-// @name        unsplashbg-asana
-// @description Background from unsplash.com as background in asana.
+// @name        asana-level-up
+// @description Adds background images from unsplash, customisable My Tasks sections and more!
 // @author      Aaria Carter-Weir
-// @namespace   unsplashbg-asana
+// @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     4.0.1
+// @version     4.0.2
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
 // @run-at document-ready
 // ==/UserScript==
+
 
 (function() {
     // Used for localStorage etc
@@ -115,6 +116,10 @@
             this.props.docReadyTimer = setInterval(function() {
                 if ($('.NavigationLink.Topbar-myTasksButton').length) {
                     clearInterval(self.props.docReadyTimer);
+
+                    $(document).on('click', '.NavigationLink.Topbar-myTasksButton', function() {
+                        self.updateMyTaskHeadings();
+                    });
 
                     if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
                         self.updateMyTaskHeadings();

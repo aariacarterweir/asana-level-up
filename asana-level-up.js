@@ -116,6 +116,10 @@
                 if ($('.NavigationLink.Topbar-myTasksButton').length) {
                     clearInterval(self.props.docReadyTimer);
 
+                    $(document).on('click', '.NavigationLink.Topbar-myTasksButton', function() {
+                        self.updateMyTaskHeadings();
+                    });
+
                     if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
                         self.updateMyTaskHeadings();
                     }

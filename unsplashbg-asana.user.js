@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.0.0
+// @version     5.0.1
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -92,7 +92,7 @@
     Plugin.prototype = {
         run: function() {
             this.runBG();
-            this.runMyTaskHeadings();
+            //this.runMyTaskHeadings();
         },
 
         runBG: function() {
@@ -128,16 +128,19 @@
         },
 
         updateMyTaskHeadings: function() {
-            var self = this;
+            var self = this,
+                attempts = 0;
 
             this.props.taskTimer = setInterval(function() {
+                attempts++;
+
                 if (!$('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').length) {
                     return;
                 }
 
                 var i = 0;
 
-                $('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').each(function () {
+                $('.TaskGroup-subgroups .TaskGroup .TaskGroupHeader>span.TaskGroupHeader-content').each(function () {
                     var $_element = $(this),
                         $_div = $_element.find('div').detach();
 
@@ -145,7 +148,7 @@
                     i++;
                 });
 
-                if (i > 3) {
+                if (i > 3 || attempts > 24) {
                     clearInterval(self.props.taskTimer);
                 }
             }, 250);

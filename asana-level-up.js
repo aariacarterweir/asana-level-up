@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     0.0.1
+// @version     1.0.0
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -21,11 +21,15 @@
         bgInterval: 20, // seconds
         bgSize: '1920x1080',
         bgTransition: '2s',
-
-        // comma separated search terms
         bgSearchTerm: 'nautical, boat, sea, sunset',
 
+        taskHeading0: "In Tray",
+        taskHeading1: "Next Actions",
+        taskHeading2: "Upcoming Actions",
+        taskHeading3: "My Outcomes & Projects",
 
+
+        /** Configurable Options **/
         configurable: {
             heading_bg: "Background Image",
 
@@ -43,7 +47,29 @@
             },
 
             bgSearchTerm: {
-                label: "Unsplash Search Term (comma separated)",
+                label: "Unsplash Search Terms (comma separated)",
+                field: "text"
+            },
+
+            heading_mytasks: "My Tasks Headings",
+
+            taskHeading0: {
+                label: "Rename 'New Tasks' To",
+                field: "text"
+            },
+
+            taskHeading1: {
+                label: "Rename 'Today' To",
+                field: "text"
+            },
+
+            taskHeading2: {
+                label: "Rename 'Upcoming' To",
+                field: "text"
+            },
+
+            taskHeading3: {
+                label: "Rename 'Later' To",
                 field: "text"
             }
         }
@@ -51,7 +77,8 @@
 
     // Plugin constructor
     var Plugin = function () {
-        this.options = $.extend({}, defaults, this.loadUserOptions());
+        this.options = $.extend(true, {}, defaults, this.loadUserOptions());
+
         this.props = {
             bgTimer: null,
             currentBgUrl: null
@@ -63,17 +90,9 @@
 
     // Plugin methods
     Plugin.prototype = {
-        loadUserOptions: function() {
-            var userOptions = localStorage.getItem('options_' + namespace);
-            return (userOptions ? JSON.parse(userOptions) : {});
-        },
-
-        saveUserOptions: function() {
-            localStorage.setItem('options_' + namespace, JSON.stringify(this.options));
-        },
-
         run: function() {
             this.runBG();
+            this.runMyTaskHeadings();
         },
 
         runBG: function() {
@@ -88,6 +107,44 @@
                 clearInterval(this.props.bgTimer);
                 $('[href="#openBG"], [href="#changeBG"]', this.$_controls).hide();
             }
+        },
+
+        runMyTaskHeadings: function() {
+            var self = this;
+
+            this.props.docReadyTimer = setInterval(function() {
+                if ($('.NavigationLink.Topbar-myTasksButton').length) {
+                    clearInterval(self.props.docReadyTimer);
+
+                    if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
+                        self.updateMyTaskHeadings();
+                    }
+                }
+            }, 250);
+        },
+
+        updateMyTaskHeadings: function() {
+            var self = this;
+
+            this.props.taskTimer = setInterval(function() {
+                if (!$('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').length) {
+                    return;
+                }
+
+                var i = 0;
+
+                $('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').each(function () {
+                    var $_element = $(this),
+                        $_div = $_element.find('div').detach();
+
+                    $_element.html(self.options['taskHeading' + i]).append($_div);
+                    i++;
+                });
+
+                if (i > 3) {
+                    clearInterval(self.props.taskTimer);
+                }
+            }, 250);
         },
 
         buildUI: function() {
@@ -313,9 +370,13 @@
                 // Settings
                 '#settings-modal_' + namespace + ' h3 { ' +
                     'display: block; ' +
-                    'margin: 20px 0 0 0; '+
+                    'margin: 40px 0 0 0; '+
                     'text-align: center; ' +
                     'font-size: 19px; ' +
+                '} ' +
+
+                '#settings-modal_' + namespace + ' h3:first-of-type { ' +
+                    'margin-top: 0; ' +
                 '} ' +
 
                 '#settings-modal_' + namespace + ' label { ' +
@@ -331,7 +392,16 @@
                     'box-sizing: border-box; ' +
                 '} '
             );
-        }
+        },
+
+        loadUserOptions: function() {
+            var userOptions = localStorage.getItem('options_' + namespace);
+            return (userOptions ? JSON.parse(userOptions) : {});
+        },
+
+        saveUserOptions: function() {
+            localStorage.setItem('options_' + namespace, JSON.stringify(this.options));
+        },
     };
 
     // Assign plugin to body

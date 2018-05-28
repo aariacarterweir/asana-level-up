@@ -4,216 +4,406 @@
 // @author      Aaria Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
-// @version     3.1.2
-// @grant GM_xmlhttpRequest
+// @version     4.0.0
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
+// @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
 // @run-at document-ready
 // ==/UserScript==
 
-/** Change Log
- * - Added user configurable search terms saved in localstorage
- */
+(function() {
+    // Used for localStorage etc
+    var namespace = 'asana-level-up';
 
-// namespace
-var unsplashbg = {
-    options: {
-        interval: 120 * 1000, // (seconds) * 1000
-        size: '1920x1080',
-        transitionDuration : '2s',
+    // Default options which can be over-written:
+    var defaults = {
+        bgEnabled: true,
+        bgInterval: 20, // seconds
+        bgSize: '1920x1080',
+        bgTransition: '2s',
+        bgSearchTerm: 'nautical, boat, sea, sunset',
 
-        // no trailing slash on the path pls
-        // path: 'random'
-
-        // ari's LA collection
-        //path: 'collection/1266904'
-
-        // generic Welcome to LA collection
-        //path: 'collection/1171747',
-
-        path: '',
-
-        pathDefault: 'no-path',
-
-        // comma separated search terms
-        searchTermDefault: 'nautical, boat, sea, sunset',
-
-        // search term
-        // to disable search term, set to 'no-search-term'
-        searchTerm: ''
-    }
-};
+        taskHeading0: "In Tray",
+        taskHeading1: "Next Actions",
+        taskHeading2: "Upcoming Actions",
+        taskHeading3: "My Outcomes & Projects",
 
 
-unsplashbg.userSearchTerm = function(reset) {
-    var keys = {
-        searchTerm: 'unsplash-search-term',
-        path: 'unsplash-path'
-    };
+        /** Configurable Options **/
+        configurable: {
+            heading_bg: "Background Image",
 
-    for (var type in keys) {
-        if (!localStorage.getItem(keys[type]) || reset === true) {
-            switch(type) {
-                case 'searchTerm':
-                    localStorage.setItem(keys[type], prompt("Enter your search term for unsplash or leave blank to use the default. Set to 'no-search-term' to disable the search term. " +
-                        "Search terms are separated by commas. Default: " + unsplashbg.options.searchTermDefault) || unsplashbg.options.searchTermDefault);
-                    break;
+            bgEnabled: {
+                label: "Status",
+                field: {
+                    Enabled: true,
+                    Disabled: false
+                }
+            },
 
-                case 'path':
-                    localStorage.setItem(keys[type], prompt("Enter your path for unsplash or leave blank to use the default. " +
-                        "No trailing or preceding slashes please! Eg: 'collection/1266904' Default: '" + unsplashbg.options.pathDefault + "'") || unsplashbg.options.pathDefault);
-                    break;
+            bgInterval: {
+                label: "Interval (seconds)",
+                field: "number"
+            },
+
+            bgSearchTerm: {
+                label: "Unsplash Search Terms (comma separated)",
+                field: "text"
+            },
+
+            heading_mytasks: "My Tasks Headings",
+
+            taskHeading0: {
+                label: "Rename 'New Tasks' To",
+                field: "text"
+            },
+
+            taskHeading1: {
+                label: "Rename 'Today' To",
+                field: "text"
+            },
+
+            taskHeading2: {
+                label: "Rename 'Upcoming' To",
+                field: "text"
+            },
+
+            taskHeading3: {
+                label: "Rename 'Later' To",
+                field: "text"
             }
         }
+    };
 
-        unsplashbg.options[type] = localStorage.getItem(keys[type]);
-    }
+    // Plugin constructor
+    var Plugin = function () {
+        this.options = $.extend(true, {}, defaults, this.loadUserOptions());
 
-    if (reset === true) {
-        unsplashbg.changeBg();
-    }
-};
+        this.props = {
+            bgTimer: null,
+            currentBgUrl: null
+        };
 
-unsplashbg.styles = [];
+        this.buildUI();
+        this.run();
+    };
 
-// change bg fn
-unsplashbg.changeBg = function() {
-    clearInterval(unsplashbg.timer);
-
-    var url = 'https://source.unsplash.com/';
-
-    if (unsplashbg.options.path && unsplashbg.options.path !== 'no-path') {
-        url += unsplashbg.options.path + '/';
-    }
-
-    if (unsplashbg.options.size) {
-        url+= unsplashbg.options.size + '/';
-    }
-
-    if (unsplashbg.options.searchTerm && unsplashbg.options.searchTerm !== 'no-search-term') {
-        url += '?' + encodeURI(unsplashbg.options.searchTerm)
-    }
-
-    GM_xmlhttpRequest({
-        method: 'GET',
-        url: url,
-        headers: {
-            'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
-            'Accept': 'text/xml' // If not specified, browser defaults will be used.
+    // Plugin methods
+    Plugin.prototype = {
+        run: function() {
+            this.runBG();
+            this.runMyTaskHeadings();
         },
 
-        onload: function (response) {
+        runBG: function() {
+            this.options.bgEnabled = (this.options.bgEnabled === true || this.options.bgEnabled === "true");
 
-            var tmp = new Image();
+            if (this.options.bgEnabled) {
+                this.changeBG();
+                $('[href="#openBG"], [href="#changeBG"]', this.$_controls).show();
+            } else {
+                this.$_bgImage.html('');
+                this.props.currentBgUrl = null;
+                clearInterval(this.props.bgTimer);
+                $('[href="#openBG"], [href="#changeBG"]', this.$_controls).hide();
+            }
+        },
 
-            tmp.onload = function(){
-                // create new style
-                var DLstyle = document.createElement("style");
-                DLstyle.textContent = ' body, #bg_pattern ' +
-                    '{' +
-                    'background-image: url("'+ response.finalUrl +'") !important; ' +
-                    '}';
-                document.head.appendChild(DLstyle);
-                unsplashbg.styles.push(DLstyle);
+        runMyTaskHeadings: function() {
+            var self = this;
 
-                var oldStyle;
-                if ( (oldStyle = unsplashbg.styles[unsplashbg.styles.length - 2]) ) {
-                    // cleanup later...
-                    setTimeout(function(){
-                        oldStyle.outerHTML = '';
-                    }, 20000);
+            this.props.docReadyTimer = setInterval(function() {
+                if ($('.NavigationLink.Topbar-myTasksButton').length) {
+                    clearInterval(self.props.docReadyTimer);
+
+                    if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
+                        self.updateMyTaskHeadings();
+                    }
+                }
+            }, 250);
+        },
+
+        updateMyTaskHeadings: function() {
+            var self = this;
+
+            this.props.taskTimer = setInterval(function() {
+                if (!$('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').length) {
+                    return;
                 }
 
-                // kick off another timer
-                unsplashbg.timer = setInterval(unsplashbg.changeBg, unsplashbg.options.interval);
+                var i = 0;
 
-                // Add in the link if necessary
-                if (!$('.unsplash-link').length) {
-                    $('<a href="" class="unsplash-link" target="_blank">&#128247;</a>').appendTo($('body'));
+                $('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').each(function () {
+                    var $_element = $(this),
+                        $_div = $_element.find('div').detach();
+
+                    $_element.html(self.options['taskHeading' + i]).append($_div);
+                    i++;
+                });
+
+                if (i > 3) {
+                    clearInterval(self.props.taskTimer);
+                }
+            }, 250);
+        },
+
+        buildUI: function() {
+            this.addCSS();
+            this.addControls();
+            this.addSettings();
+        },
+
+        addControls: function() {
+            var self = this;
+
+            this.$_controls = $('<div class="controls_' + namespace + '"></div>').appendTo('body');
+
+            // # Add Buttons
+            $(
+                // Settings Button
+                '<a href="#openSettings"><i class="fa fa-cog"></i></a>' +
+                // Open BG Button
+                '<a href="#openBG"><i class="fa fa-camera-retro"></i></a>' +
+                // Change the BG Button
+                '<a href="#changeBG"><i class="fa fa-refresh"></i></a>'
+            ).appendTo(this.$_controls);
+
+            // # Bind Buttons
+            $('a', this.$_controls).bind('click', function(e) {
+                e.preventDefault();
+
+                var action = $(this).attr('href').replace(/^#/, '');
+                self[action].call(self);
+            });
+        },
+
+        openBG: function() {
+            window.open(this.props.currentBgUrl);
+            console.log('I OPEN BG IN NEW WINDOW? I BE GOOD DOG? WUFF!');
+        },
+
+        openSettings: function() {
+            $.fancybox.open({
+                src: '#settings-modal_' + namespace
+            });
+        },
+
+        changeBG: function() {
+            var self = this;
+            clearInterval(this.props.bgTimer);
+
+            var url = 'https://source.unsplash.com/' + this.options.bgSize + '/' +
+                '?' + encodeURI(this.options.bgSearchTerm) +
+                '&amp;bust-cache-timestamp=' + Math.round((new Date()).getTime() / 1000);
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0', // If not specified, navigator.userAgent will be used.
+                    'Accept': 'text/xml' // If not specified, browser defaults will be used.
+                },
+
+                onload: function (response) {
+                    // Preload the image
+                    $('<img>').load(function() {
+                        self.props.currentBgUrl = response.finalUrl;
+                        self.$_bgImage.html('body, #bg_pattern { background-image: url("' + response.finalUrl + '");');
+                        self.props.bgTimer = setInterval(function(){ self.changeBG(); }, self.options.bgInterval * 1000);
+                    }).attr('src', response.finalUrl);
+                }
+            });
+        },
+
+        addSettings: function() {
+            this.$_settings = $('<div id="settings-modal_' + namespace + '" style="display: none;"></div>').appendTo('body');
+
+            var self = this,
+                optionName,
+                option,
+                fieldId,
+                $_select,
+                label;
+
+            // loop through editable options and build settings ui for them
+            for (optionName in this.options.configurable) {
+                option = this.options.configurable[optionName];
+
+                // add a heading?
+                if (optionName.indexOf("heading_") === 0) {
+                    $('<h3>' + option + '</h3>').appendTo(this.$_settings);
+                    continue;
                 }
 
-                // Update link with url to image
-                $('.unsplash-link').attr('href', response.finalUrl);
-            };
+                // store the fieldId
+                fieldId = 'field-' + optionName + '_' + namespace;
 
-            tmp.src = response.finalUrl;
-        }
-    });
-};
+                // add label
+                $('<label for="' + fieldId + '"></label>').html(option.label + ":").appendTo(this.$_settings);
 
+                // add field
+                switch(typeof option.field) {
+                    case 'string':
+                        $('<input>')
+                            .attr('type', option.field)
+                            .val(this.options[optionName])
+                            .attr('id', fieldId)
+                            .data('option', optionName)
+                            .appendTo(this.$_settings);
+                        break;
 
-// add generic styles to doc
-unsplashbg.basestyles = document.createElement("style");
-unsplashbg.basestyles.textContent = 'body .lunaui-grid-center-pane-container #center_pane, ' +
-    'body .lunaui-grid-center-pane-container #right_pane, ' +
-    'body #right_pane_container #center_pane, ' +
-    'body #right_pane_container #right_pane, ' +
-    '.asana2View-taskPane ' +
-    '{' +
-        'background-color: rgba(255,255,255,0.955); '+
-    '}' +
+                    case 'object':
+                        $_select = $('<select>').attr('id', fieldId);
 
-    'body, #bg_pattern { ' +
-        // enhance performance
-        '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
-        'backface-visibility: hidden; ' +
+                        for (label in option.field) {
+                            $('<option>')
+                                .html(label)
+                                .attr('value', option.field[label])
+                                .appendTo($_select);
+                        }
 
-        // layout
-        'background-position: center center; ' +
-        'background-size: cover; ' +
-        'background-repeat: no-repeat;' +
-        '-webkit-transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-        'transition: background-image ' + unsplashbg.options.transitionDuration + ' ease-in-out; ' +
-    '}' +
+                        $_select
+                            .val(this.options[optionName] + "")
+                            .data('option', optionName)
+                            .appendTo(this.$_settings);
+                        break;
+                }
+            }
 
-    '.Sidebar { background-color: rgba(34, 43, 55, 0.9) !important; }' +
-    '.SingleTaskTitleRow-taskName textarea, .Tokenizer { background: transparent !important; } ' +
+            // bind save events
+            $('input, select', this.$_settings).bind('change', function() {
+                var $_option = $(this),
+                    option = $_option.data('option');
 
-    'span.BoardColumnHeaderTitle {\n' +
-    '    background: rgba(255,255,255,0.7);\n' +
-    '    border-radius: 10px;\n' +
-    '    padding: 0 20px;\n' +
-    '}' +
+                if ($_option.val() === "") {
+                    $_option.val(defaults[option]);
+                }
 
-    '.BoardBody-descriptionLink {\n' +
-    '    background: rgba(255,255,255,0.4);\n' +
-    '    color: #000;\n' +
-    '    padding: 0 5px;\n' +
-    '}' +
+                self.options[option] = $_option.val();
+                self.run();
+                self.saveUserOptions();
+            });
+        },
 
-    'a.BoardBody-descriptionLink {\n' +
-    '    color: #000;\n' +
-    '}' +
+        addCSS: function() {
+            this.$_css = $('<style></style>').appendTo('head');
+            this.$_bgImage = $('<style></style>').appendTo('head');
 
-    '.FloatingSelect-label {\n' +
-    '    background: rgba(255,255,255,0.4);\n' +
-    '    color: #000;\n' +
-    '    padding: 0 5px;\n' +
-    '}' +
+            // add fontawesome
+            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">');
 
-    // unsplash icon
-    '.unsplash-link { text-decoration: none; position: absolute; bottom: 10px; left: 20px; font-size: 18px; opacity: 0.7; } ' +
-    '.unsplash-link:hover, .unsplash-link:active, .unsplash-link:visited, .unsplash-link:focus { text-decoration: none; opacity: 1; }';
-document.head.appendChild(unsplashbg.basestyles);
+            // add flexbox
+            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css">');
 
-// call the fns
-unsplashbg.userSearchTerm();
-unsplashbg.changeBg();
+            // add generic css
+            this.$_css.html(
+                'body, #bg_pattern { ' +
+                // enhance performance
+                '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
+                'backface-visibility: hidden; ' +
 
-// register a key binding
-$(document).bind('keydown', function(e){
-    if(e.ctrlKey && e.shiftKey && e.which === 190) {
-        return unsplashbg.changeBg();
-    }
+                // layout
+                'background-position: center center; ' +
+                'background-size: cover; ' +
+                'background-repeat: no-repeat;' +
+                '-webkit-transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
+                'transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
+                '} ' +
 
-    if (e.ctrlKey && e.shiftKey && e.which === 188) {
-        unsplashbg.userSearchTerm(true);
-    }
-});
+                '.SingleTaskTitleRow-taskName textarea,' +
+                '.Tokenizer {' +
+                'background: transparent !important;' +
+                '} ' +
 
-console.log('--------------------');
-console.log('UnsplashBG running');
-console.log('Press CTRL+SHIFT+. to change bg');
-console.log('Press CTRL+SHIFT+, to change search terms / path');
-console.log('BG will change every ' + unsplashbg.options.interval / 1000 + ' seconds');
-console.log('Use the camera icon in the bottom left of the window to view the image directly :)');
-console.log('--------------------');
+                'span.BoardColumnHeaderTitle {' +
+                'background: rgba(255,255,255,0.7);' +
+                'border-radius: 10px;' +
+                'padding: 0 20px;' +
+                '} ' +
+
+                '.BoardBody-descriptionLink {' +
+                'background: rgba(255,255,255,0.4);' +
+                'color: #000;' +
+                'padding: 0 5px;' +
+                '} ' +
+
+                'a.BoardBody-descriptionLink {' +
+                'color: #000;' +
+                '} ' +
+
+                '.FloatingSelect-label {' +
+                'background: rgba(255,255,255,0.4);' +
+                'color: #000;' +
+                'padding: 0 5px;' +
+                '} ' +
+
+                // # Controls Div
+                '.controls_' + namespace + ' {' +
+                'position: absolute;' +
+                'bottom: 10px;' +
+                'left: 10px;' +
+                'font-size: 18px;' +
+                'background: rgba(0,0,0, 0.7); ' +
+                'padding: 5px 10px; ' +
+                'border-radius: 10px; ' +
+                '} ' +
+
+                '.controls_' + namespace + ' a, ' +
+                '.controls_' + namespace + ' a:focus {' +
+                'opacity: 0.7;' +
+                'color: #FFF;' +
+                'margin-left: 14px;' +
+                '} ' +
+
+                // # Link to BG Image
+                '.controls_' + namespace + ' a:hover,' +
+                '.controls_' + namespace + ' a:active {' +
+                'color: #FFF;' +
+                'text-decoration: none;' +
+                'opacity: 1;' +
+                '} ' +
+
+                '.controls_' + namespace + ' a:first-child { ' +
+                'margin-left: 0; ' +
+                '} ' +
+
+                // Settings
+                '#settings-modal_' + namespace + ' h3 { ' +
+                'display: block; ' +
+                'margin: 40px 0 0 0; '+
+                'text-align: center; ' +
+                'font-size: 19px; ' +
+                '} ' +
+
+                '#settings-modal_' + namespace + ' h3:first-of-type { ' +
+                'margin-top: 0; ' +
+                '} ' +
+
+                '#settings-modal_' + namespace + ' label { ' +
+                'display: block; ' +
+                'margin: 20px 0 10px 0; '+
+                '} ' +
+
+                '#settings-modal_' + namespace + ' input, ' +
+                '#settings-modal_' + namespace + ' select { ' +
+                'border: 1px solid #999; ' +
+                'padding: 5px; ' +
+                'width: 100%; ' +
+                'box-sizing: border-box; ' +
+                '} '
+            );
+        },
+
+        loadUserOptions: function() {
+            var userOptions = localStorage.getItem('options_' + namespace);
+            return (userOptions ? JSON.parse(userOptions) : {});
+        },
+
+        saveUserOptions: function() {
+            localStorage.setItem('options_' + namespace, JSON.stringify(this.options));
+        },
+    };
+
+    // Assign plugin to body
+    $('body').data('plugin_' + namespace, new Plugin());
+
+})();

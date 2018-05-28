@@ -4,13 +4,12 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     4.0.2
+// @version     5.0.0
 // @grant GM_xmlhttpRequest
 // @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
 // @run-at document-ready
 // ==/UserScript==
-
 
 (function() {
     // Used for localStorage etc
@@ -19,7 +18,7 @@
     // Default options which can be over-written:
     var defaults = {
         bgEnabled: true,
-        bgInterval: 20, // seconds
+        bgInterval: 60, // seconds
         bgSize: '1920x1080',
         bgTransition: '2s',
         bgSearchTerm: 'nautical, boat, sea, sunset',

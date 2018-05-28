@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        unsplashbg-asana
 // @description Background from unsplash.com as background in asana.
-// @author      Ariana Carter-Weir
+// @author      Aaria Carter-Weir
 // @namespace   unsplashbg-asana
 // @include     https://app.asana.com/*
 // @version     3.1.2

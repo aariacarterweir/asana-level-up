@@ -4,9 +4,9 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.0.1
+// @version     5.1.0
 // @grant GM_xmlhttpRequest
-// @require http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
+// @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
 // @run-at document-ready
 // ==/UserScript==
@@ -21,13 +21,12 @@
         bgInterval: 60, // seconds
         bgSize: '1920x1080',
         bgTransition: '2s',
-        bgSearchTerm: 'nautical, boat, sea, sunset',
+        bgSearchTerm: 'sailing, sea, ocean',
 
-        taskHeading0: "In Tray",
-        taskHeading1: "Next Actions",
-        taskHeading2: "Upcoming Actions",
-        taskHeading3: "My Outcomes & Projects",
-
+        "label New Tasks"   : "In Tray",
+        "label Today"       : "Next Actions",
+        "label Upcoming"    : "Upcoming Actions",
+        "label Later"       : "My Outcomes & Projects",
 
         /** Configurable Options **/
         configurable: {
@@ -53,22 +52,22 @@
 
             heading_mytasks: "My Tasks Headings",
 
-            taskHeading0: {
+            "label New Tasks": {
                 label: "Rename 'New Tasks' To",
                 field: "text"
             },
 
-            taskHeading1: {
+            "label Today": {
                 label: "Rename 'Today' To",
                 field: "text"
             },
 
-            taskHeading2: {
+            "label Upcoming": {
                 label: "Rename 'Upcoming' To",
                 field: "text"
             },
 
-            taskHeading3: {
+            "label Later": {
                 label: "Rename 'Later' To",
                 field: "text"
             }
@@ -92,7 +91,7 @@
     Plugin.prototype = {
         run: function() {
             this.runBG();
-            //this.runMyTaskHeadings();
+            this.runMyTaskHeadings();
         },
 
         runBG: function() {
@@ -101,8 +100,12 @@
             if (this.options.bgEnabled) {
                 this.changeBG();
                 $('[href="#openBG"], [href="#changeBG"]', this.$_controls).show();
+                this.$_bgCss.appendTo('head');
+                this.$_bgImage.appendTo('head');
             } else {
-                this.$_bgImage.html('');
+                // turn off the BG image
+                this.$_bgImage.detach();
+                this.$_bgCss.detach();
                 this.props.currentBgUrl = null;
                 clearInterval(this.props.bgTimer);
                 $('[href="#openBG"], [href="#changeBG"]', this.$_controls).hide();
@@ -116,15 +119,27 @@
                 if ($('.NavigationLink.Topbar-myTasksButton').length) {
                     clearInterval(self.props.docReadyTimer);
 
-                    $(document).on('click', '.NavigationLink.Topbar-myTasksButton', function() {
-                        self.updateMyTaskHeadings();
-                    });
-
                     if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
                         self.updateMyTaskHeadings();
                     }
                 }
-            }, 250);
+            }, 500);
+
+            var mtEvent = 'click.mytasks_' + namespace,
+                mtMenuEvent = 'click.mytasksMenu_' + namespace,
+                mtTooltipEvent = 'mouseover.mytasks_' + namespace;
+
+            $(document).off(mtEvent).on(mtEvent, '.NavigationLink.Topbar-myTasksButton', function() {
+                self.updateMyTaskHeadings();
+            });
+
+            $(document).off(mtMenuEvent).on(mtMenuEvent, '.ScheduleStatus.MyTasksTaskRow-scheduleStatus', function() {
+                self.updateMyTasksMenu();
+            });
+
+            $(document).off(mtTooltipEvent).on(mtTooltipEvent, '.ScheduleStatus.MyTasksTaskRow-scheduleStatus', function() {
+                self.updateMyTasksToolTip();
+            });
         },
 
         updateMyTaskHeadings: function() {
@@ -132,26 +147,85 @@
                 attempts = 0;
 
             this.props.taskTimer = setInterval(function() {
-                attempts++;
+                var $_headings = $('.TaskGroup-subgroups .TaskGroup .TaskGroupHeader>span.TaskGroupHeader-content'),
+                    i = 0;
 
-                if (!$('.TaskGroup-subgroups .TaskGroup span.TaskGroupHeader-content').length) {
-                    return;
-                }
-
-                var i = 0;
-
-                $('.TaskGroup-subgroups .TaskGroup .TaskGroupHeader>span.TaskGroupHeader-content').each(function () {
+                $_headings.each(function () {
                     var $_element = $(this),
-                        $_div = $_element.find('div').detach();
+                        dataKey = 'origText_' + namespace;
 
-                    $_element.html(self.options['taskHeading' + i]).append($_div);
+                    if (!$_element.data(dataKey)) {
+                        $_element.data(dataKey, $_element.text());
+                    }
+
+                    var label = "label " + $_element.data(dataKey);
+
+                    if (self.options[label]) {
+                        var $_div = $_element.find('div').detach();
+                        $_element.html(self.options[label]).prepend($_div);
+                    }
+
                     i++;
                 });
 
-                if (i > 3 || attempts > 24) {
+                attempts++;
+
+                if (i > 3 || attempts > 40) {
                     clearInterval(self.props.taskTimer);
                 }
-            }, 250);
+            }, 125);
+        },
+
+        updateMyTasksMenu: function() {
+            var self = this,
+                attempts = 0;
+
+            this.props.taskMenuTimer = setInterval(function() {
+                var $_items = $('.menu.menu--select.ScheduleStatusPopover-menu a.menuItem-button span.ScheduleStatusPopover-mainText'),
+                    i = 0;
+
+                $_items.each(function() {
+                    var $_element = $(this),
+                        dataKey = 'origText_' + namespace;
+
+                    if (!$_element.data(dataKey)) {
+                        $_element.data(dataKey, $_element.text().replace(/^Mark(ed)? for /, ''));
+                    }
+
+                    var label = "label " + $_element.data(dataKey);
+
+                    if (self.options[label]) {
+                        $_element.text($_element.text().replace(/^(Mark(?:ed)? for) .+$/, '$1 ' + self.options[label]));
+                    }
+                });
+
+                attempts++;
+
+                if (i > 2 || attempts > 25) {
+                    clearInterval(self.props.taskMenuTimer);
+                }
+            }, 125);
+        },
+
+        updateMyTasksToolTip: function() {
+            var self = this,
+                attempts = 0;
+
+            clearInterval(this.props.taskTooltipTimer);
+
+            this.props.taskTooltipTimer = setInterval(function() {
+                var $_tooltip = $('div.Tooltip-body');
+
+                if ($_tooltip.length) {
+                    $_tooltip.html('Mark this task for ' + self.options["label Today"] + ', ' + self.options["label Upcoming"] + ' or ' + self.options["label Later"] + '.');
+                }
+
+                attempts++;
+
+                if ($_tooltip.length || attempts > 40) {
+                    clearInterval(self.props.taskTooltipTimer);
+                }
+            }, 125);
         },
 
         buildUI: function() {
@@ -294,7 +368,8 @@
 
         addCSS: function() {
             this.$_css = $('<style></style>').appendTo('head');
-            this.$_bgImage = $('<style></style>').appendTo('head');
+            this.$_bgCss = $('<style></style>');
+            this.$_bgImage = $('<style></style>');
 
             // add fontawesome
             $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">');
@@ -304,99 +379,109 @@
 
             // add generic css
             this.$_css.html(
-                'body, #bg_pattern { ' +
-                // enhance performance
-                '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
-                'backface-visibility: hidden; ' +
-
-                // layout
-                'background-position: center center; ' +
-                'background-size: cover; ' +
-                'background-repeat: no-repeat;' +
-                '-webkit-transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
-                'transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
+                // # My Tasks Menu
+                'body .menu--select .menuItem-button { ' +
+                    'padding-left: 20px;' +
                 '} ' +
 
-                '.SingleTaskTitleRow-taskName textarea,' +
-                '.Tokenizer {' +
-                'background: transparent !important;' +
-                '} ' +
-
-                'span.BoardColumnHeaderTitle {' +
-                'background: rgba(255,255,255,0.7);' +
-                'border-radius: 10px;' +
-                'padding: 0 20px;' +
-                '} ' +
-
-                '.BoardBody-descriptionLink {' +
-                'background: rgba(255,255,255,0.4);' +
-                'color: #000;' +
-                'padding: 0 5px;' +
-                '} ' +
-
-                'a.BoardBody-descriptionLink {' +
-                'color: #000;' +
-                '} ' +
-
-                '.FloatingSelect-label {' +
-                'background: rgba(255,255,255,0.4);' +
-                'color: #000;' +
-                'padding: 0 5px;' +
+                'body .ScheduleStatusPopover-shortcut { ' +
+                    'padding-left: 10px;' +
                 '} ' +
 
                 // # Controls Div
                 '.controls_' + namespace + ' {' +
-                'position: absolute;' +
-                'bottom: 10px;' +
-                'left: 10px;' +
-                'font-size: 18px;' +
-                'background: rgba(0,0,0, 0.7); ' +
-                'padding: 5px 10px; ' +
-                'border-radius: 10px; ' +
+                    'position: absolute;' +
+                    'bottom: 10px;' +
+                    'left: 10px;' +
+                    'font-size: 18px;' +
+                    'background: rgba(0,0,0, 0.7); ' +
+                    'padding: 5px 10px; ' +
+                    'border-radius: 10px; ' +
                 '} ' +
 
                 '.controls_' + namespace + ' a, ' +
                 '.controls_' + namespace + ' a:focus {' +
-                'opacity: 0.7;' +
-                'color: #FFF;' +
-                'margin-left: 14px;' +
+                    'opacity: 0.7;' +
+                    'color: #FFF;' +
+                    'margin-left: 14px;' +
                 '} ' +
 
-                // # Link to BG Image
                 '.controls_' + namespace + ' a:hover,' +
                 '.controls_' + namespace + ' a:active {' +
-                'color: #FFF;' +
-                'text-decoration: none;' +
-                'opacity: 1;' +
+                    'color: #FFF;' +
+                    'text-decoration: none;' +
+                    'opacity: 1;' +
                 '} ' +
 
                 '.controls_' + namespace + ' a:first-child { ' +
-                'margin-left: 0; ' +
+                    'margin-left: 0; ' +
                 '} ' +
 
                 // Settings
                 '#settings-modal_' + namespace + ' h3 { ' +
-                'display: block; ' +
-                'margin: 40px 0 0 0; '+
-                'text-align: center; ' +
-                'font-size: 19px; ' +
+                    'display: block; ' +
+                    'margin: 40px 0 0 0; '+
+                    'text-align: center; ' +
+                    'font-size: 19px; ' +
                 '} ' +
 
                 '#settings-modal_' + namespace + ' h3:first-of-type { ' +
-                'margin-top: 0; ' +
+                    'margin-top: 0; ' +
                 '} ' +
 
                 '#settings-modal_' + namespace + ' label { ' +
-                'display: block; ' +
-                'margin: 20px 0 10px 0; '+
+                    'display: block; ' +
+                    'margin: 20px 0 10px 0; '+
                 '} ' +
 
                 '#settings-modal_' + namespace + ' input, ' +
                 '#settings-modal_' + namespace + ' select { ' +
-                'border: 1px solid #999; ' +
-                'padding: 5px; ' +
-                'width: 100%; ' +
-                'box-sizing: border-box; ' +
+                    'border: 1px solid #999; ' +
+                    'padding: 5px; ' +
+                    'width: 100%; ' +
+                    'box-sizing: border-box; ' +
+                '} '
+            );
+
+            this.$_bgCss.html(
+                'body, #bg_pattern { ' +
+                    // enhance performance
+                    '-webkit-backface-visibility: hidden;   -moz-backface-visibility: hidden;   -ms-backface-visibility: hidden; ' +
+                    'backface-visibility: hidden; ' +
+
+                    // layout
+                    'background-position: center center; ' +
+                    'background-size: cover; ' +
+                    'background-repeat: no-repeat;' +
+                    '-webkit-transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
+                    'transition: background-image ' + this.options.bgTransition + ' ease-in-out; ' +
+                '} ' +
+
+                '.SingleTaskTitleRow-taskName textarea,' +
+                '.Tokenizer {' +
+                    'background: transparent !important;' +
+                '} ' +
+
+                'span.BoardColumnHeaderTitle {' +
+                    'background: rgba(255,255,255,0.7);' +
+                    'border-radius: 10px;' +
+                    'padding: 0 20px;' +
+                '} ' +
+
+                '.BoardBody-descriptionLink {' +
+                    'background: rgba(255,255,255,0.4);' +
+                    'color: #000;' +
+                    'padding: 0 5px;' +
+                '} ' +
+
+                'a.BoardBody-descriptionLink {' +
+                    'color: #000;' +
+                '} ' +
+
+                '.FloatingSelect-label {' +
+                    'background: rgba(255,255,255,0.4);' +
+                    'color: #000;' +
+                    'padding: 0 5px;' +
                 '} '
             );
         },

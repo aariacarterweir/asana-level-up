@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.1.2
+// @version     5.1.3
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -90,29 +90,32 @@
     // Plugin methods
     Plugin.prototype = {
         run: function() {
-            this.runBG();
-            this.runMyTaskHeadings();
+            this.initBG();
+            this.initMyTasks();
         },
 
-        runBG: function() {
+        initBG: function() {
             this.options.bgEnabled = (this.options.bgEnabled === true || this.options.bgEnabled === "true");
 
             if (this.options.bgEnabled) {
-                this.changeBG();
-                $('[href="#openBG"], [href="#changeBG"]', this.$_controls).show();
+                // turn on the BG image
                 this.$_bgCss.appendTo('head');
                 this.$_bgImage.appendTo('head');
-            } else {
-                // turn off the BG image
-                this.$_bgImage.detach();
-                this.$_bgCss.detach();
-                this.props.currentBgUrl = null;
-                clearInterval(this.props.bgTimer);
-                $('[href="#openBG"], [href="#changeBG"]', this.$_controls).hide();
+                this.changeBG();
+                $('[href="#openBG"], [href="#changeBG"]', this.$_controls).show();
+
+                return;
             }
+
+            // turn off the BG image
+            this.$_bgImage.detach();
+            this.$_bgCss.detach();
+            this.props.currentBgUrl = null;
+            clearInterval(this.props.bgTimer);
+            $('[href="#openBG"], [href="#changeBG"]', this.$_controls).hide();
         },
 
-        runMyTaskHeadings: function() {
+        initMyTasks: function() {
             var self = this;
 
             this.props.docReadyTimer = setInterval(function() {
@@ -120,7 +123,7 @@
                     clearInterval(self.props.docReadyTimer);
 
                     if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
-                        self.updateMyTaskHeadings();
+                        self.updateMyTasks();
                     }
                 }
             }, 500);
@@ -130,7 +133,7 @@
                 mtTooltipEvent = 'mouseover.mytasks_' + namespace;
 
             $(document).off(mtEvent).on(mtEvent, '.NavigationLink.Topbar-myTasksButton', function() {
-                self.updateMyTaskHeadings();
+                self.updateMyTasks();
             });
 
             $(document).off(mtMenuEvent).on(mtMenuEvent, '.ScheduleStatus.MyTasksTaskRow-scheduleStatus', function() {
@@ -142,7 +145,7 @@
             });
         },
 
-        updateMyTaskHeadings: function() {
+        updateMyTasks: function() {
             var self = this,
                 attempts = 0;
 
@@ -229,12 +232,12 @@
         },
 
         buildUI: function() {
-            this.addCSS();
-            this.addControls();
-            this.addSettings();
+            this.buildCSS();
+            this.buildControls();
+            this.buildSettings();
         },
 
-        addControls: function() {
+        buildControls: function() {
             var self = this;
 
             this.$_controls = $('<div class="controls_' + namespace + '"></div>').appendTo('body');
@@ -296,7 +299,7 @@
             });
         },
 
-        addSettings: function() {
+        buildSettings: function() {
             this.$_settings = $('<div id="settings-modal_' + namespace + '" style="display: none;"></div>').appendTo('body');
 
             var self = this,
@@ -366,16 +369,15 @@
             });
         },
 
-        addCSS: function() {
+        buildCSS: function() {
+            // add fontawesome
+            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">');
+            // add flexbox
+            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css">');
+
             this.$_css = $('<style></style>').appendTo('head');
             this.$_bgCss = $('<style></style>');
             this.$_bgImage = $('<style></style>');
-
-            // add fontawesome
-            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">');
-
-            // add flexbox
-            $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.css">');
 
             // add generic css
             this.$_css.html(

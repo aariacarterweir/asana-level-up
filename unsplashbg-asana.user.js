@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.1.3
+// @version     5.2.0
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -79,12 +79,14 @@
         this.options = $.extend(true, {}, defaults, this.loadUserOptions());
 
         this.props = {
-            bgTimer: null,
-            currentBgUrl: null
+            currentBgUrl: null,
+            timers: []
         };
 
-        this.buildUI();
-        this.run();
+        this.waitForElement('.react-app-node, .asana2View-bodyContainer', function() {
+            this.buildUI();
+            this.run();
+        }, { attempts: 0 });
     };
 
     // Plugin methods
@@ -118,15 +120,11 @@
         initMyTasks: function() {
             var self = this;
 
-            this.props.docReadyTimer = setInterval(function() {
-                if ($('.NavigationLink.Topbar-myTasksButton').length) {
-                    clearInterval(self.props.docReadyTimer);
-
-                    if ($('.NavigationLink.Topbar-myTasksButton.is-selected').length) {
-                        self.updateMyTasks();
-                    }
+            this.waitForElement('.NavigationLink.Topbar-myTasksButton', function($_element) {
+                if ($_element.hasClass('is-selected')) {
+                    this.updateMyTasks();
                 }
-            }, 500);
+            }, { interval: 500, attempts: 0 });
 
             var mtEvent = 'click.mytasks_' + namespace,
                 mtMenuEvent = 'click.mytasksMenu_' + namespace,
@@ -146,13 +144,10 @@
         },
 
         updateMyTasks: function() {
-            var self = this,
-                attempts = 0;
+            var selector = '.TaskGroup-subgroups .TaskGroup .TaskGroupHeader>span.TaskGroupHeader-content',
+                self = this;
 
-            this.props.taskTimer = setInterval(function() {
-                var $_headings = $('.TaskGroup-subgroups .TaskGroup .TaskGroupHeader>span.TaskGroupHeader-content'),
-                    i = 0;
-
+            this.waitForElement(selector, function($_headings) {
                 $_headings.each(function () {
                     var $_element = $(this),
                         dataKey = 'origText_' + namespace;
@@ -167,26 +162,15 @@
                         var $_div = $_element.find('div').detach();
                         $_element.html(self.options[label]).prepend($_div);
                     }
-
-                    i++;
                 });
-
-                attempts++;
-
-                if (i > 3 || attempts > 40) {
-                    clearInterval(self.props.taskTimer);
-                }
-            }, 125);
+            }, { numElements: 4 });
         },
 
         updateMyTasksMenu: function() {
-            var self = this,
-                attempts = 0;
+            var selector = '.menu.menu--select.ScheduleStatusPopover-menu a.menuItem-button span.ScheduleStatusPopover-mainText',
+                self = this;
 
-            this.props.taskMenuTimer = setInterval(function() {
-                var $_items = $('.menu.menu--select.ScheduleStatusPopover-menu a.menuItem-button span.ScheduleStatusPopover-mainText'),
-                    i = 0;
-
+            this.waitForElement(selector, function($_items) {
                 $_items.each(function() {
                     var $_element = $(this),
                         dataKey = 'origText_' + namespace;
@@ -201,34 +185,13 @@
                         $_element.text($_element.text().replace(/^(Mark(?:ed)? for) .+$/, '$1 ' + self.options[label]));
                     }
                 });
-
-                attempts++;
-
-                if (i > 2 || attempts > 25) {
-                    clearInterval(self.props.taskMenuTimer);
-                }
-            }, 125);
+            }, { numElements: 3 });
         },
 
         updateMyTasksToolTip: function() {
-            var self = this,
-                attempts = 0;
-
-            clearInterval(this.props.taskTooltipTimer);
-
-            this.props.taskTooltipTimer = setInterval(function() {
-                var $_tooltip = $('div.Tooltip-body');
-
-                if ($_tooltip.length) {
-                    $_tooltip.html('Mark this task for ' + self.options["label Today"] + ', ' + self.options["label Upcoming"] + ' or ' + self.options["label Later"] + '.');
-                }
-
-                attempts++;
-
-                if ($_tooltip.length || attempts > 40) {
-                    clearInterval(self.props.taskTooltipTimer);
-                }
-            }, 125);
+            this.waitForElement('div.Tooltip-body', function($_element) {
+                $_element.html('Mark this task for ' + this.options["label Today"] + ', ' + this.options["label Upcoming"] + ' or ' + this.options["label Later"] + '.');
+            });
         },
 
         buildUI: function() {
@@ -496,6 +459,39 @@
         saveUserOptions: function() {
             localStorage.setItem('options_' + namespace, JSON.stringify(this.options));
         },
+
+        waitForElement: function(selector, fn, options) {
+            var self = this,
+                id = this.props.timers.length,
+                attempts = 0;
+
+            var stop = function() {
+                clearInterval(self.props.timers[id]);
+            };
+
+            var defaults = {
+                numElements: 1,
+                interval: 125,
+                attempts: 40
+            };
+
+            stop();
+            options = $.extend({}, defaults, options);
+
+            this.props.timers[id] = setInterval(function() {
+                var $_element = $(selector);
+
+                if ($_element.length) {
+                    fn.call(self, $_element, stop);
+                }
+
+                attempts++;
+
+                if ($_element.length >= options.numElements || (options.attempts && attempts >= options.attempts)) {
+                    stop();
+                }
+            }, options.interval);
+        }
     };
 
     // Assign plugin to body

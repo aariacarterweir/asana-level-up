@@ -80,6 +80,7 @@
 
         this.props = {
             currentBgUrl: null,
+            bgTimer: null,
             timers: []
         };
 

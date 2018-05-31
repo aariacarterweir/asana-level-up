@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.2.0
+// @version     5.2.1
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -129,7 +129,7 @@
 
             var mtEvent = 'click.mytasks_' + namespace,
                 mtMenuEvent = 'click.mytasksMenu_' + namespace,
-                mtTooltipEvent = 'mouseover.mytasks_' + namespace;
+                mtTooltipEvent = 'mouseenter.mytasks_' + namespace;
 
             $(document).off(mtEvent).on(mtEvent, '.NavigationLink.Topbar-myTasksButton', function() {
                 self.updateMyTasks();
@@ -192,7 +192,7 @@
         updateMyTasksToolTip: function() {
             this.waitForElement('div.Tooltip-body', function($_element) {
                 $_element.html('Mark this task for ' + this.options["label Today"] + ', ' + this.options["label Upcoming"] + ' or ' + this.options["label Later"] + '.');
-            });
+            }, { attempts: 11 });
         },
 
         buildUI: function() {

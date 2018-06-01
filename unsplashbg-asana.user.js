@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.2.1
+// @version     5.2.2
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -13,10 +13,11 @@
 
 (function() {
     // Used for localStorage etc
-    var namespace = 'asana-level-up';
+    var namespace = 'asana-level-up',
+        defaults, configurable, Plugin;
 
     // Default options which can be over-written:
-    var defaults = {
+    defaults = {
         bgEnabled: true,
         bgInterval: 60, // seconds
         bgSize: '1920x1080',
@@ -27,55 +28,55 @@
         "label Today"       : "Next Actions",
         "label Upcoming"    : "Upcoming Actions",
         "label Later"       : "My Outcomes & Projects",
+    };
 
-        /** Configurable Options **/
-        configurable: {
-            heading_bg: "Background Image",
+    /** Configurable Options **/
+    configurable = {
+        heading_bg: "Background Image",
 
             bgEnabled: {
-                label: "Status",
+            label: "Status",
                 field: {
-                    Enabled: true,
+                Enabled: true,
                     Disabled: false
-                }
-            },
+            }
+        },
 
-            bgInterval: {
-                label: "Interval (seconds)",
+        bgInterval: {
+            label: "Interval (seconds)",
                 field: "number"
-            },
+        },
 
-            bgSearchTerm: {
-                label: "Unsplash Search Terms (comma separated)",
+        bgSearchTerm: {
+            label: "Unsplash Search Terms (comma separated)",
                 field: "text"
-            },
+        },
 
-            heading_mytasks: "My Tasks Headings",
+        heading_mytasks: "My Tasks Headings",
 
             "label New Tasks": {
-                label: "Rename 'New Tasks' To",
+            label: "Rename 'New Tasks' To",
                 field: "text"
-            },
+        },
 
-            "label Today": {
-                label: "Rename 'Today' To",
+        "label Today": {
+            label: "Rename 'Today' To",
                 field: "text"
-            },
+        },
 
-            "label Upcoming": {
-                label: "Rename 'Upcoming' To",
+        "label Upcoming": {
+            label: "Rename 'Upcoming' To",
                 field: "text"
-            },
+        },
 
-            "label Later": {
-                label: "Rename 'Later' To",
+        "label Later": {
+            label: "Rename 'Later' To",
                 field: "text"
-            }
         }
     };
 
     // Plugin constructor
-    var Plugin = function () {
+    Plugin = function () {
         this.options = $.extend(true, {}, defaults, this.loadUserOptions());
 
         this.props = {
@@ -119,7 +120,8 @@
         },
 
         initMyTasks: function() {
-            var self = this;
+            var self = this,
+                mtEvent, mtMenuEvent, mtTooltipEvent;
 
             this.waitForElement('.NavigationLink.Topbar-myTasksButton', function($_element) {
                 if ($_element.hasClass('is-selected')) {
@@ -127,9 +129,9 @@
                 }
             }, { interval: 500, attempts: 0 });
 
-            var mtEvent = 'click.mytasks_' + namespace,
-                mtMenuEvent = 'click.mytasksMenu_' + namespace,
-                mtTooltipEvent = 'mouseenter.mytasks_' + namespace;
+            mtEvent = 'click.mytasks_' + namespace;
+            mtMenuEvent = 'click.mytasksMenu_' + namespace;
+            mtTooltipEvent = 'mouseenter.mytasks_' + namespace;
 
             $(document).off(mtEvent).on(mtEvent, '.NavigationLink.Topbar-myTasksButton', function() {
                 self.updateMyTasks();
@@ -140,7 +142,9 @@
             });
 
             $(document).off(mtTooltipEvent).on(mtTooltipEvent, '.ScheduleStatus.MyTasksTaskRow-scheduleStatus', function() {
-                self.updateMyTasksToolTip();
+                self.waitForElement('div.Tooltip-body', function($_element) {
+                    $_element.html('Mark this task for ' + this.options["label Today"] + ', ' + this.options["label Upcoming"] + ' or ' + this.options["label Later"] + '.');
+                }, { attempts: 11 });
             });
         },
 
@@ -189,12 +193,6 @@
             }, { numElements: 3 });
         },
 
-        updateMyTasksToolTip: function() {
-            this.waitForElement('div.Tooltip-body', function($_element) {
-                $_element.html('Mark this task for ' + this.options["label Today"] + ', ' + this.options["label Upcoming"] + ' or ' + this.options["label Later"] + '.');
-            }, { attempts: 11 });
-        },
-
         buildUI: function() {
             this.buildCSS();
             this.buildControls();
@@ -237,10 +235,11 @@
         },
 
         changeBG: function() {
-            var self = this;
+            var self = this,
+                url;
             clearInterval(this.props.bgTimer);
 
-            var url = 'https://source.unsplash.com/' + this.options.bgSize + '/' +
+            url = 'https://source.unsplash.com/' + this.options.bgSize + '/' +
                 '?' + encodeURI(this.options.bgSearchTerm) +
                 '&amp;bust-cache-timestamp=' + Math.round((new Date()).getTime() / 1000);
 
@@ -264,8 +263,6 @@
         },
 
         buildSettings: function() {
-            this.$_settings = $('<div id="settings-modal_' + namespace + '" style="display: none;"></div>').appendTo('body');
-
             var self = this,
                 optionName,
                 option,
@@ -273,9 +270,11 @@
                 $_select,
                 label;
 
+            this.$_settings = $('<div id="settings-modal_' + namespace + '" style="display: none;"></div>').appendTo('body');
+
             // loop through editable options and build settings ui for them
-            for (optionName in this.options.configurable) {
-                option = this.options.configurable[optionName];
+            for (optionName in configurable) {
+                option = configurable[optionName];
 
                 // add a heading?
                 if (optionName.indexOf("heading_") === 0) {
@@ -464,13 +463,14 @@
         waitForElement: function(selector, fn, options) {
             var self = this,
                 id = this.props.timers.length,
-                attempts = 0;
+                attempts = 0,
+                stop, defaults;
 
-            var stop = function() {
+            stop = function() {
                 clearInterval(self.props.timers[id]);
             };
 
-            var defaults = {
+            defaults = {
                 numElements: 1,
                 interval: 125,
                 attempts: 40

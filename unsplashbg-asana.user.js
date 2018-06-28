@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.2.2
+// @version     5.2.3
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -236,12 +236,16 @@
 
         changeBG: function() {
             var self = this,
-                url;
+                url, $_buttonIcon;
+
             clearInterval(this.props.bgTimer);
 
             url = 'https://source.unsplash.com/' + this.options.bgSize + '/' +
                 '?' + encodeURI(this.options.bgSearchTerm) +
                 '&amp;bust-cache-timestamp=' + Math.round((new Date()).getTime() / 1000);
+
+            // get the change BG button icon and add the loading class to it
+            $_buttonIcon = $('a[href="#changeBG"] i', this.$_controls).addClass('loading-unsplash-bg');
 
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -255,6 +259,7 @@
                     // Preload the image
                     $('<img>').load(function() {
                         self.props.currentBgUrl = response.finalUrl;
+                        $_buttonIcon.removeClass('loading-unsplash-bg');
                         self.$_bgImage.html('body, #bg_pattern { background-image: url("' + response.finalUrl + '");');
                         self.props.bgTimer = setInterval(function(){ self.changeBG(); }, self.options.bgInterval * 1000);
                     }).attr('src', response.finalUrl);
@@ -447,6 +452,19 @@
                     'background: rgba(255,255,255,0.4);' +
                     'color: #000;' +
                     'padding: 0 5px;' +
+                '} ' +
+
+                '.loading-unsplash-bg {' +
+                    'animation: unsplashRotation 2s infinite linear;' +
+                '} ' +
+
+                '@keyframes unsplashRotation {' +
+                    'from {' +
+                        'transform: rotate(0deg);' +
+                    '} ' +
+                    'to {' +
+                        'transform: rotate(359deg);' +
+                    '} ' +
                 '} '
             );
         },

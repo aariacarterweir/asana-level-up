@@ -95,7 +95,7 @@
     Plugin.prototype = {
         run: function() {
             this.initBG();
-            this.initMyTasks();
+            //this.initMyTasks();
         },
 
         initBG: function() {

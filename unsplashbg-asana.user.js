@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.3.0
+// @version     5.3.1
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -22,6 +22,7 @@
         bgInterval: 60, // seconds
         bgSize: '1920x1080',
         bgTransition: '2s',
+        bgUseCollection: true,
         bgCollection: "1509076",
         bgSearchTerm: 'beach, beach sunrise, water',
 

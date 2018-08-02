@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.2.4
+// @version     5.3.0
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -22,6 +22,7 @@
         bgInterval: 60, // seconds
         bgSize: '1920x1080',
         bgTransition: '2s',
+        bgCollection: "1509076",
         bgSearchTerm: 'beach, beach sunrise, water',
 
         "label New Tasks"   : "In Tray",
@@ -37,19 +38,32 @@
             bgEnabled: {
             label: "Status",
                 field: {
-                Enabled: true,
+                    Enabled: true,
                     Disabled: false
             }
         },
 
         bgInterval: {
             label: "Interval (seconds)",
-                field: "number"
+            field: "number"
+        },
+
+        bgUseCollection: {
+            label: "Use bg collections or use search term?",
+            field: {
+                Collection: true,
+                SearchTerm: false
+            }
+        },
+
+        bgCollection: {
+            label: "ID of a Unsplash collection you love",
+            field: "text"
         },
 
         bgSearchTerm: {
             label: "Unsplash Search Terms (comma separated)",
-                field: "text"
+            field: "text"
         },
 
         heading_mytasks: "My Tasks Headings",
@@ -95,7 +109,7 @@
     Plugin.prototype = {
         run: function() {
             this.initBG();
-            //this.initMyTasks();
+            this.initMyTasks();
         },
 
         initBG: function() {
@@ -123,7 +137,7 @@
             var self = this,
                 mtEvent, mtMenuEvent, mtTooltipEvent;
 
-            this.waitForElement('.NavigationLink.Topbar-myTasksButton', function($_element) {
+            this.waitForElement('.NavigationLink.SidebarTopNavLinks-myTasksButton', function($_element) {
                 if ($_element.hasClass('is-selected')) {
                     this.updateMyTasks();
                 }
@@ -133,7 +147,7 @@
             mtMenuEvent = 'click.mytasksMenu_' + namespace;
             mtTooltipEvent = 'mouseenter.mytasks_' + namespace;
 
-            $(document).off(mtEvent).on(mtEvent, '.NavigationLink.Topbar-myTasksButton', function() {
+            $(document).off(mtEvent).on(mtEvent, '.SidebarTopNavLinks-myTasksButton', function() {
                 self.updateMyTasks();
             });
 
@@ -236,16 +250,26 @@
 
         changeBG: function() {
             var self = this,
-                url, $_buttonIcon;
+                url, $_button;
 
             clearInterval(this.props.bgTimer);
 
-            url = 'https://source.unsplash.com/' + this.options.bgSize + '/' +
-                '?' + encodeURI(this.options.bgSearchTerm) +
-                '&amp;bust-cache-timestamp=' + Math.round((new Date()).getTime() / 1000);
+            if (!this.options.bgSearchTerm && !this.options.bgCollection) {
+                return;
+            }
+
+            url = 'https://source.unsplash.com/';
+
+            if (this.options.bgUseCollection === "true" || this.options.bgUseCollection === true) {
+                url += 'collection/' + this.options.bgCollection + '/' + this.options.bgSize;
+            } else {
+                url += this.options.bgSize + '/' + '?' + encodeURI(this.options.bgSearchTerm);
+            }
+
+            console.log( url );
 
             // get the change BG button icon and add the loading class to it
-            $_buttonIcon = $('a[href="#changeBG"] i', this.$_controls).addClass('loading-unsplash-bg');
+            $_button = $('a[href="#changeBG"]', this.$_controls).addClass('loading-unsplash-bg');
 
             GM_xmlhttpRequest({
                 method: 'GET',
@@ -258,10 +282,15 @@
                 onload: function (response) {
                     // Preload the image
                     $('<img>').load(function() {
+                        console.log(response.finalUrl + ' loaded');
                         self.props.currentBgUrl = response.finalUrl;
-                        $_buttonIcon.removeClass('loading-unsplash-bg');
                         self.$_bgImage.html('body, #bg_pattern { background-image: url("' + response.finalUrl + '");');
-                        self.props.bgTimer = setInterval(function(){ self.changeBG(); }, self.options.bgInterval * 1000);
+
+                        setTimeout(function() {
+                            $_button.removeClass('loading-unsplash-bg');
+                        }, 2100);
+
+                        self.props.bgTimer = setInterval(function(){ self.changeBG(); }, (self.options.bgInterval * 1000) );
                     }).attr('src', response.finalUrl);
                 }
             });
@@ -387,6 +416,11 @@
                     'margin-left: 0; ' +
                 '} ' +
 
+                '.controls_' + namespace + ' a i { ' +
+                    'transition: transform 0.5s ease;' +
+                '} ' +
+
+
                 // Settings
                 '#settings-modal_' + namespace + ' h3 { ' +
                     'display: block; ' +
@@ -455,6 +489,10 @@
                 '} ' +
 
                 '.loading-unsplash-bg {' +
+                    'pointer-events: none;' +
+                '} ' +
+
+                '.loading-unsplash-bg i {' +
                     'animation: unsplashRotation 2s infinite linear;' +
                 '} ' +
 

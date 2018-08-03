@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.3.1
+// @version     5.3.2
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -13,14 +13,14 @@
 
 (function() {
     // Used for localStorage etc
-    var namespace = 'asana-level-up',
+    var namespace = 'asana-levelup',
         defaults, configurable, Plugin;
 
     // Default options which can be over-written:
     defaults = {
         bgEnabled: true,
         bgInterval: 60, // seconds
-        bgSize: '1920x1080',
+        bgSize: '2400x1350',
         bgTransition: '2s',
         bgUseCollection: true,
         bgCollection: "1509076",
@@ -36,11 +36,11 @@
     configurable = {
         heading_bg: "Background Image",
 
-            bgEnabled: {
+        bgEnabled: {
             label: "Status",
-                field: {
-                    Enabled: true,
-                    Disabled: false
+            field: {
+                Enabled: true,
+                Disabled: false
             }
         },
 
@@ -69,24 +69,24 @@
 
         heading_mytasks: "My Tasks Headings",
 
-            "label New Tasks": {
+        "label New Tasks": {
             label: "Rename 'New Tasks' To",
-                field: "text"
+            field: "text"
         },
 
         "label Today": {
             label: "Rename 'Today' To",
-                field: "text"
+            field: "text"
         },
 
         "label Upcoming": {
             label: "Rename 'Upcoming' To",
-                field: "text"
+            field: "text"
         },
 
         "label Later": {
             label: "Rename 'Later' To",
-                field: "text"
+            field: "text"
         }
     };
 
@@ -397,6 +397,7 @@
                     'background: rgba(0,0,0, 0.7); ' +
                     'padding: 5px 10px; ' +
                     'border-radius: 10px; ' +
+                    'z-index: 1000; ' +
                 '} ' +
 
                 '.controls_' + namespace + ' a, ' +
@@ -509,11 +510,31 @@
         },
 
         loadUserOptions: function() {
-            var userOptions = localStorage.getItem('options_' + namespace);
-            return (userOptions ? JSON.parse(userOptions) : {});
+            var userOptions = localStorage.getItem('options_' + namespace),
+                i;
+
+            if (userOptions && (userOptions = JSON.parse(userOptions))) {
+                for (i in userOptions) {
+                    if (!userOptions.hasOwnProperty(i)) continue;
+
+                    if (typeof configurable[i] === 'undefined') {
+                        delete userOptions[i];
+                    }
+                }
+            }
+
+            return userOptions || {};
         },
 
         saveUserOptions: function() {
+            var userOptions = {},
+                i;
+
+            for (i in configurable) {
+                if (!configurable.hasOwnProperty(i) || i.indexOf('heading_') === 0) continue;
+                userOptions[i] = this.options[i];
+            }
+
             localStorage.setItem('options_' + namespace, JSON.stringify(this.options));
         },
 

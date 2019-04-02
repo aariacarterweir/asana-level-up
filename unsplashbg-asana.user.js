@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.3.2
+// @version     5.3.3
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -239,7 +239,7 @@
         },
 
         openBG: function() {
-            window.open(this.props.currentBgUrl);
+            window.open(this.props.currentBgUrl.replace(/&crop=[a-z]+&cs=[a-z0-9]+&w=[0-9]+&h=[0-9]+&fit=[a-z0-9]+/i, ''));
             console.log('I OPEN BG IN NEW WINDOW? I BE GOOD DOG? WUFF!');
         },
 

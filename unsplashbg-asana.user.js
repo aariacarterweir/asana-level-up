@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     5.3.3
+// @version     5.3.4
 // @grant GM_xmlhttpRequest
 // @require https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.3.5/jquery.fancybox.min.js
@@ -468,7 +468,7 @@
                     'background: transparent !important;' +
                 '} ' +
 
-                'span.BoardColumnHeaderTitle {' +
+                '.BoardColumnHeader.BoardColumn-header {' +
                     'background: rgba(255,255,255,0.7);' +
                     'border-radius: 10px;' +
                     'padding: 0 20px;' +

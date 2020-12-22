@@ -18,12 +18,12 @@ class AsanaLevelUp {
             bgInterval: 60, // seconds
             bgSize: '1875x1406',
             bgSearchTerm: 'surf',
-        }, localStorage.getItem('options_asana_level-up') || {});
+        });
 
         this.mutationHandlers = [];
 
-        this.settings = new Settings(this.options, this.mutationHandlers);
-        this.bg = new Bg(this.options, this.mutationHandlers);
+        this.settings = new Settings(this);
+        this.bg = new Bg(this);
 
         this.observe();
     }
@@ -39,13 +39,20 @@ class AsanaLevelUp {
 }
 
 class Settings {
-    constructor(options, mutationHandlers) {
-        this.options = options;
-        this.mutationHandlers = mutationHandlers;
+    constructor(parent) {
+        this.parent = parent;
+        this.options = parent.options;
+        this.mutationHandlers = parent.mutationHandlers;
         this.boot();
     }
 
     boot() {
+        const stored = localStorage.getItem('asana-level-up');
+
+        if (stored) {
+            _.merge(this.options, JSON.parse(stored));
+        }
+
         this.mutationHandlers.push(() => this.mutate());
     }
 
@@ -62,7 +69,7 @@ class Settings {
 
         const button = document.createElement('a');
         button.classList.add('StaticMenuItemBase-button', 'StaticMenuItemBase--medium', 'MenuItemBase', 'Menu-menuItem', 'AsanaLevelUpSettingsButton');
-        button.innerHTML = `<span class="MenuItem-label">Level.up Settings</span>`;
+        button.innerHTML = `<span class="MenuItem-label">Level.up Background: ${this.options.bgEnabled ? 'Enabled' : 'Disabled'}</span>`;
         menu.appendChild(button);
 
         button.addEventListener('mouseenter', () => {
@@ -73,18 +80,27 @@ class Settings {
         button.addEventListener('mouseleave', () => {
             button.classList.remove('is-highlighted');
         });
+
+        button.addEventListener('click', () => {
+            this.options.bgEnabled = ! this.options.bgEnabled;
+            button.innerHTML = `<span class="MenuItem-label">Level.up Background: ${this.options.bgEnabled ? 'Enabled' : 'Disabled'}</span>`;
+            this.parent.bg.boot();
+
+            localStorage.setItem('asana-level-up', JSON.stringify({ bgEnabled: this.options.bgEnabled }));
+        });
     }
 }
 
 class Bg {
-    constructor(options, mutationHandlers) {
-        this.options = options;
-        this.mutationHandlers = mutationHandlers;
+    constructor(parent) {
+        this.options = parent.options;
+        this.mutationHandlers = parent.mutationHandlers;
         this.boot();
     }
 
     boot() {
         if (this.options.bgEnabled && ! this.bgTimer) {
+            this.setupBg();
             this.updateBg();
             this.bgTimer = setInterval(() => this.updateBg(), this.options.bgInterval * 1000);
         }
@@ -96,23 +112,15 @@ class Bg {
 
     async updateBg() {
         const { request: { responseURL: bgUrl } } = await axios.head(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
-
-        if (! this.bgStyle) {
-            this.setup(bgUrl);
-        }
-
         const newBg = document.createElement('style');
+        newBg.classList.add('asana-level-up-bg-style');
         newBg.innerHTML = `:root { --asana-level-up-bg: url(${bgUrl}); }`;
         document.getElementsByTagName('head')[0].appendChild(newBg);
     }
 
-    setup(bgUrl) {
+    setupBg() {
         this.bgStyle = document.createElement('style');
-        this.bgStyle.innerHTML = `
-               :root {
-                    --asana-level-up-bg: url(${bgUrl});
-                }
-            
+        this.bgStyle.innerHTML = `           
                 .ThemeSetter-themeBackground {
                     backface-visibility: hidden;
                     background-position: center center;
@@ -137,8 +145,16 @@ class Bg {
     }
 
     mutate() {
+        const board = document.querySelectorAll('.Board')[0];
+
+        if (! board) {
+            return;
+        }
+
         if (this.options.bgEnabled) {
-            document.querySelectorAll('.Board')[0].classList.add('Board--hasBackgroundImage');
+            board.classList.add('Board--hasBackgroundImage');
+        } else {
+            board.classList.remove('Board--hasBackgroundImage');
         }
     }
 
@@ -146,6 +162,7 @@ class Bg {
         clearInterval(this.bgTimer);
         this.bgTimer = null;
         this.bgStyle.remove();
+        this.mutate();
     }
 }
 

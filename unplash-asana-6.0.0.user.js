@@ -16,8 +16,8 @@ class AsanaLevelUp {
         this.options = _.merge({
             bgEnabled: true,
             bgInterval: 60, // seconds
-            bgSize: '2400x1350',
-            bgSearchTerm: 'sunrise, ocean, surf',
+            bgSize: '1875x1406',
+            bgSearchTerm: 'surf',
         }, localStorage.getItem('options_asana_level-up') || {});
 
         this.boot();
@@ -34,38 +34,55 @@ class AsanaLevelUp {
     }
 
     async updateBg() {
-        const newBgImg = await this.getNewBg();
-
-        console.log(newBgImg);
+        const { request: { responseURL: bgUrl } } = await this.getNewBg();
 
         if (! this.bgStyle) {
-            this.bgStyle = document.createElement('style');
-            document.getElementsByTagName('head')[0].appendChild(this.bgStyle);
-            this.bgStyle.innerHTML = `
-               :root {
-                    --asana-level-up-bg: url(${newBgImg});
-                }
-            
-                body,
-                #bg_pattern {
-                    backface-visibility: hidden;
-                    background-position: center center;
-                    background-size: cover;
-                    background-repeat: no-repeat;
-                    transition: background-image 2s ease-in-out;
-                    background-image: var(--asana-level-up-bg);
-                }
-            `;
+            this.setupBgStyle(bgUrl);
         }
 
         const newBg = document.createElement('style');
         newBg.innerHTML = `
             :root {
-                --asana-level-up-bg: url(${newBgImg});
+                --asana-level-up-bg: url(${bgUrl});
             }
         `;
-
         document.getElementsByTagName('head')[0].appendChild(newBg);
+    }
+
+    setupBgStyle(bgUrl) {
+        this.bgStyle = document.createElement('style');
+        this.bgStyle.innerHTML = `
+               :root {
+                    --asana-level-up-bg: url(${bgUrl});
+                }
+            
+                .ThemeSetter-themeBackground {
+                    backface-visibility: hidden;
+                    background-position: center center;
+                    background-size: cover;
+                    background-repeat: no-repeat;
+                    transition: background-image 2s ease-in-out;
+                    background-image: var(--asana-level-up-bg) !important;
+                }
+                
+                .BoardNewColumn h3 span {
+                    color: #fff !important;
+                }
+                
+                .BoardAddCardSubtleButton {
+                    background-color: #fff !important;
+                }
+        `;
+        document.getElementsByTagName('head')[0].appendChild(this.bgStyle);
+
+        const addBoardBgClass = _.debounce(() => document.querySelectorAll('.Board')[0].classList.add('Board--hasBackgroundImage'), 150);
+        this.bgMutationObserver = new MutationObserver(addBoardBgClass);
+        this.bgMutationObserver.observe(document.querySelectorAll('.AppRoot')[0], {
+            childList: true,
+            attributes: false,
+            subtree: true,
+        });
+        addBoardBgClass();
     }
 }
 

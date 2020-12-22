@@ -20,12 +20,26 @@ class AsanaLevelUp {
             bgSearchTerm: 'surf',
         }, localStorage.getItem('options_asana_level-up') || {});
 
+        this.bg = new Bg(this.options);
+    }
+}
+
+class Bg {
+    constructor(options) {
+        this.options = options;
         this.boot();
     }
 
     boot() {
-        if (this.options.bgEnabled) {
+        if (this.options.bgEnabled && ! this.bgTimer) {
             this.bgTimer = (() => { this.updateBg(); return setInterval(() => this.updateBg(), this.options.bgInterval * 1000); })();
+        }
+
+        if (! this.options.bgEnabled && this.bgTimer) {
+            clearInterval(this.bgTimer);
+            this.bgTimer = null;
+            this.bgStyle.remove();
+            this.bgMutationObserver.disconnect();
         }
     }
 

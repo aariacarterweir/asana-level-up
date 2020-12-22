@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name        asana-level-up-v6
-// @description Adds background images from unsplash, customisable My Tasks sections and more!
+// @description Adds background images from unsplash
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     6.0.2
+// @version     6.0.3
 // @require https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js
 // @run-at document-ready

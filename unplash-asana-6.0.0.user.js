@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        asana-level-up
+// @name        asana-level-up-v6
 // @description Adds background images from unsplash, customisable My Tasks sections and more!
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up

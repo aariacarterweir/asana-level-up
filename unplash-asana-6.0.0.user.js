@@ -20,50 +20,93 @@ class AsanaLevelUp {
             bgSearchTerm: 'surf',
         }, localStorage.getItem('options_asana_level-up') || {});
 
-        this.bg = new Bg(this.options);
+        this.mutationHandlers = [];
+
+        this.settings = new Settings(this.options, this.mutationHandlers);
+        this.bg = new Bg(this.options, this.mutationHandlers);
+
+        this.observe();
+    }
+
+    observe() {
+        const observer = new MutationObserver(_.debounce(() => _.each(this.mutationHandlers, handler => handler()), 50));
+        observer.observe(document.querySelectorAll('.AppRoot')[0], {
+            childList: true,
+            attributes: false,
+            subtree: true,
+        });
+    }
+}
+
+class Settings {
+    constructor(options, mutationHandlers) {
+        this.options = options;
+        this.mutationHandlers = mutationHandlers;
+        this.boot();
+    }
+
+    boot() {
+        this.mutationHandlers.push(() => this.mutate());
+    }
+
+    mutate() {
+        const menu = document.querySelectorAll('.TopbarPageHeaderGlobalActions-settingsDropdown .Menu')[0];
+
+        if (! menu || menu.querySelectorAll('.AsanaLevelUpSettingsButton').length) {
+            return;
+        }
+
+        const sep = document.createElement('div');
+        sep.classList.add('MenuSeparator');
+        menu.appendChild(sep);
+
+        const button = document.createElement('a');
+        button.classList.add('StaticMenuItemBase-button', 'StaticMenuItemBase--medium', 'MenuItemBase', 'Menu-menuItem', 'AsanaLevelUpSettingsButton');
+        button.innerHTML = `<span class="MenuItem-label">Level.up Settings</span>`;
+        menu.appendChild(button);
+
+        button.addEventListener('mouseenter', () => {
+            _.each(menu.querySelectorAll('.is-highlighted'), node => node.classList.remove('is-highlighted'));
+            button.classList.add('is-highlighted');
+        });
+
+        button.addEventListener('mouseleave', () => {
+            button.classList.remove('is-highlighted');
+        });
     }
 }
 
 class Bg {
-    constructor(options) {
+    constructor(options, mutationHandlers) {
         this.options = options;
+        this.mutationHandlers = mutationHandlers;
         this.boot();
     }
 
     boot() {
         if (this.options.bgEnabled && ! this.bgTimer) {
-            this.bgTimer = (() => { this.updateBg(); return setInterval(() => this.updateBg(), this.options.bgInterval * 1000); })();
+            this.updateBg();
+            this.bgTimer = setInterval(() => this.updateBg(), this.options.bgInterval * 1000);
         }
 
         if (! this.options.bgEnabled && this.bgTimer) {
-            clearInterval(this.bgTimer);
-            this.bgTimer = null;
-            this.bgStyle.remove();
-            this.bgMutationObserver.disconnect();
+            this.destroy();
         }
-    }
-
-    getNewBg() {
-        return axios.get(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
     }
 
     async updateBg() {
-        const { request: { responseURL: bgUrl } } = await this.getNewBg();
+        const { request: { responseURL: bgUrl } } = await axios.head(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
 
         if (! this.bgStyle) {
-            this.setupBgStyle(bgUrl);
+            this.setup(bgUrl);
         }
 
         const newBg = document.createElement('style');
-        newBg.innerHTML = `
-            :root {
-                --asana-level-up-bg: url(${bgUrl});
-            }
-        `;
+        newBg.innerHTML = `:root { --asana-level-up-bg: url(${bgUrl}); }`;
         document.getElementsByTagName('head')[0].appendChild(newBg);
     }
 
-    setupBgStyle(bgUrl) {
+    setup(bgUrl) {
         this.bgStyle = document.createElement('style');
         this.bgStyle.innerHTML = `
                :root {
@@ -89,14 +132,20 @@ class Bg {
         `;
         document.getElementsByTagName('head')[0].appendChild(this.bgStyle);
 
-        const addBoardBgClass = _.debounce(() => document.querySelectorAll('.Board')[0].classList.add('Board--hasBackgroundImage'), 150);
-        this.bgMutationObserver = new MutationObserver(addBoardBgClass);
-        this.bgMutationObserver.observe(document.querySelectorAll('.AppRoot')[0], {
-            childList: true,
-            attributes: false,
-            subtree: true,
-        });
-        addBoardBgClass();
+        this.mutate();
+        this.mutationHandlers.push(() => this.mutate());
+    }
+
+    mutate() {
+        if (this.options.bgEnabled) {
+            document.querySelectorAll('.Board')[0].classList.add('Board--hasBackgroundImage');
+        }
+    }
+
+    destroy() {
+        clearInterval(this.bgTimer);
+        this.bgTimer = null;
+        this.bgStyle.remove();
     }
 }
 

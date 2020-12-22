@@ -25,7 +25,7 @@ class AsanaLevelUp {
 
     boot() {
         if (this.options.bgEnabled) {
-            this.bgTimer = (() => { this.updateBg(); return setInterval(() => this.updateBg(), this.options.bgInterval); })();
+            this.bgTimer = (() => { this.updateBg(); return setInterval(() => this.updateBg(), this.options.bgInterval * 1000); })();
         }
     }
 
@@ -35,6 +35,8 @@ class AsanaLevelUp {
 
     async updateBg() {
         const newBgImg = await this.getNewBg();
+
+        console.log(newBgImg);
 
         if (! this.bgStyle) {
             this.bgStyle = document.createElement('style');

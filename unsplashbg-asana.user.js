@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     6.0.0
+// @version     6.0.1
 // @grant GM_xmlhttpRequest
 // @require https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js
@@ -21,9 +21,10 @@ class AsanaLevelUp {
         });
 
         this.mutationHandlers = [];
-
-        this.settings = new Settings(this);
-        this.bg = new Bg(this);
+        this.modules = {
+            settings: new Settings(this),
+            bg: new Bg(this),
+        };
 
         this.observe();
     }
@@ -36,16 +37,30 @@ class AsanaLevelUp {
             subtree: true,
         });
     }
+
+    updateModules() {
+        _.each(this.modules, module => module.update());
+    }
 }
 
-class Settings {
+class ModuleBase {
     constructor(parent) {
         this.parent = parent;
         this.options = parent.options;
-        this.mutationHandlers = parent.mutationHandlers;
+
         this.boot();
     }
 
+    addMutationHandler(fn) {
+        this.parent.mutationHandlers.push(fn);
+    }
+
+    update() {
+
+    }
+}
+
+class Settings extends ModuleBase {
     boot() {
         const stored = localStorage.getItem('asana-level-up');
 
@@ -53,7 +68,7 @@ class Settings {
             _.merge(this.options, JSON.parse(stored));
         }
 
-        this.mutationHandlers.push(() => this.mutate());
+        this.addMutationHandler(() => this.mutate());
     }
 
     mutate() {
@@ -84,25 +99,19 @@ class Settings {
         button.addEventListener('click', () => {
             this.options.bgEnabled = ! this.options.bgEnabled;
             button.innerHTML = `<span class="MenuItem-label">Level.up Background: ${this.options.bgEnabled ? 'Enabled' : 'Disabled'}</span>`;
-            this.parent.bg.boot();
+            this.parent.updateModules();
 
             localStorage.setItem('asana-level-up', JSON.stringify({ bgEnabled: this.options.bgEnabled }));
         });
     }
 }
 
-class Bg {
-    constructor(parent) {
-        this.options = parent.options;
-        this.mutationHandlers = parent.mutationHandlers;
-        this.boot();
-    }
-
+class Bg extends ModuleBase {
     boot() {
         if (this.options.bgEnabled && ! this.bgTimer) {
             this.setupBg();
-            this.updateBg();
-            this.bgTimer = setInterval(() => this.updateBg(), this.options.bgInterval * 1000);
+            this.getBg();
+            this.bgTimer = setInterval(() => this.getBg(), this.options.bgInterval * 1000);
         }
 
         if (! this.options.bgEnabled && this.bgTimer) {
@@ -110,7 +119,11 @@ class Bg {
         }
     }
 
-    async updateBg() {
+    update() {
+        this.boot();
+    }
+
+    async getBg() {
         const { request: { responseURL: bgUrl } } = await axios.head(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
         const newBg = document.createElement('style');
         newBg.classList.add('asana-level-up-bg-style');
@@ -141,7 +154,7 @@ class Bg {
         document.getElementsByTagName('head')[0].appendChild(this.bgStyle);
 
         this.mutate();
-        this.mutationHandlers.push(() => this.mutate());
+        this.addMutationHandler(() => this.mutate());
     }
 
     mutate() {

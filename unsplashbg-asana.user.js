@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     6.0.5
+// @version     6.0.6
 // @require https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js
 // @run-at document-ready
@@ -30,7 +30,7 @@ class AsanaLevelUp {
 
     observe() {
         const observer = new MutationObserver(_.debounce(() => _.each(this.mutationHandlers, handler => handler()), 50));
-        observer.observe(document.querySelectorAll('.AppRoot')[0], {
+        observer.observe(document.querySelectorAll('body')[0], {
             childList: true,
             attributes: false,
             subtree: true,

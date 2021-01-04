@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     6.0.3
+// @version     6.0.4
 // @require https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js
 // @require https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js
 // @run-at document-ready
@@ -16,7 +16,7 @@ class AsanaLevelUp {
             bgEnabled: true,
             bgInterval: 60, // seconds
             bgSize: '1875x1406',
-            bgSearchTerm: 'surf',
+            bgSearchTerm: 'surf,beach',
         });
 
         this.mutationHandlers = [];
@@ -123,7 +123,10 @@ class Bg extends ModuleBase {
     }
 
     async getBg() {
-        const { request: { responseURL: bgUrl } } = await axios.head(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
+        const { request: { responseURL: bgUrl } } = await axios.head(`https://source.unsplash.com/featured/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
+
+        console.log(`https://source.unsplash.com/${this.options.bgSize}/?${encodeURIComponent(this.options.bgSearchTerm)}`);
+
         const newBg = document.createElement('style');
         newBg.classList.add('asana-level-up-bg-style');
         newBg.innerHTML = `:root { --asana-level-up-bg: url(${bgUrl}); }`;

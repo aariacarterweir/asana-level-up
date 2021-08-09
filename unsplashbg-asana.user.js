@@ -4,7 +4,7 @@
 // @author      Aaria Carter-Weir
 // @namespace   asana-level-up
 // @include     https://app.asana.com/*
-// @version     6.0.6
+// @version     6.0.7
 // @run-at document-ready
 // ==/UserScript==
 
@@ -30,12 +30,9 @@ class AsanaLevelUp {
 
   observe() {
     const observer = new MutationObserver(
-      _.debounce(
-        () => _.each(this.mutationHandlers, (handler) => handler()),
-        50
-      )
+      _.debounce(() => _.each(this.mutationHandlers, handler => handler()), 50)
     );
-    observer.observe(document.querySelectorAll("body")[0], {
+    observer.observe(document.querySelectorAll('body')[0], {
       childList: true,
       attributes: false,
       subtree: true,
@@ -43,7 +40,7 @@ class AsanaLevelUp {
   }
 
   updateModules() {
-    _.each(this.modules, (module) => module.update());
+    _.each(this.modules, module => module.update());
   }
 }
 
@@ -64,7 +61,7 @@ class ModuleBase {
 
 class Settings extends ModuleBase {
   boot() {
-    const stored = localStorage.getItem("asana-level-up");
+    const stored = localStorage.getItem('asana-level-up');
 
     if (stored) {
       _.merge(this.options, JSON.parse(stored));
@@ -75,50 +72,50 @@ class Settings extends ModuleBase {
 
   mutate() {
     const menu = document.querySelectorAll(
-      ".TopbarPageHeaderGlobalActions-settingsDropdown .Menu"
+      '.TopbarPageHeaderGlobalActions-settingsDropdown .Menu'
     )[0];
 
-    if (!menu || menu.querySelectorAll(".AsanaLevelUpSettingsButton").length) {
+    if (!menu || menu.querySelectorAll('.AsanaLevelUpSettingsButton').length) {
       return;
     }
 
-    const sep = document.createElement("div");
-    sep.classList.add("MenuSeparator");
+    const sep = document.createElement('div');
+    sep.classList.add('MenuSeparator');
     menu.appendChild(sep);
 
-    const button = document.createElement("a");
+    const button = document.createElement('a');
     button.classList.add(
-      "StaticMenuItemBase-button",
-      "StaticMenuItemBase--medium",
-      "MenuItemBase",
-      "Menu-menuItem",
-      "AsanaLevelUpSettingsButton"
+      'StaticMenuItemBase-button',
+      'StaticMenuItemBase--medium',
+      'MenuItemBase',
+      'Menu-menuItem',
+      'AsanaLevelUpSettingsButton'
     );
     button.innerHTML = `<span class="MenuItem-label">Level.up Background: ${
-      this.options.bgEnabled ? "Enabled" : "Disabled"
+      this.options.bgEnabled ? 'Enabled' : 'Disabled'
     }</span>`;
     menu.appendChild(button);
 
-    button.addEventListener("mouseenter", () => {
-      _.each(menu.querySelectorAll(".is-highlighted"), (node) =>
-        node.classList.remove("is-highlighted")
+    button.addEventListener('mouseenter', () => {
+      _.each(menu.querySelectorAll('.is-highlighted'), node =>
+        node.classList.remove('is-highlighted')
       );
-      button.classList.add("is-highlighted");
+      button.classList.add('is-highlighted');
     });
 
-    button.addEventListener("mouseleave", () => {
-      button.classList.remove("is-highlighted");
+    button.addEventListener('mouseleave', () => {
+      button.classList.remove('is-highlighted');
     });
 
-    button.addEventListener("click", () => {
+    button.addEventListener('click', () => {
       this.options.bgEnabled = !this.options.bgEnabled;
       button.innerHTML = `<span class="MenuItem-label">Level.up Background: ${
-        this.options.bgEnabled ? "Enabled" : "Disabled"
+        this.options.bgEnabled ? 'Enabled' : 'Disabled'
       }</span>`;
       this.parent.updateModules();
 
       localStorage.setItem(
-        "asana-level-up",
+        'asana-level-up',
         JSON.stringify({ bgEnabled: this.options.bgEnabled })
       );
     });
@@ -152,14 +149,14 @@ class Bg extends ModuleBase {
       `https://source.unsplash.com/collection/${this.options.bgCollectionId}/${this.options.bgSize}/`
     );
 
-    const newBg = document.createElement("style");
-    newBg.classList.add("asana-level-up-bg-style");
+    const newBg = document.createElement('style');
+    newBg.classList.add('asana-level-up-bg-style');
     newBg.innerHTML = `:root { --asana-level-up-bg: url(${bgUrl}); }`;
-    document.getElementsByTagName("head")[0].appendChild(newBg);
+    document.getElementsByTagName('head')[0].appendChild(newBg);
   }
 
   setupBg() {
-    this.bgStyle = document.createElement("style");
+    this.bgStyle = document.createElement('style');
     this.bgStyle.innerHTML = `           
                 .ThemeSetter-themeBackground {
                     backface-visibility: hidden;
@@ -178,23 +175,23 @@ class Bg extends ModuleBase {
                     background-color: #fff !important;
                 }
         `;
-    document.getElementsByTagName("head")[0].appendChild(this.bgStyle);
+    document.getElementsByTagName('head')[0].appendChild(this.bgStyle);
 
     this.mutate();
     this.addMutationHandler(() => this.mutate());
   }
 
   mutate() {
-    const board = document.querySelectorAll(".Board")[0];
+    const board = document.querySelectorAll('.Board')[0];
 
     if (!board) {
       return;
     }
 
     if (this.options.bgEnabled) {
-      board.classList.add("Board--hasBackgroundImage");
+      board.classList.add('Board--hasBackgroundImage');
     } else {
-      board.classList.remove("Board--hasBackgroundImage");
+      board.classList.remove('Board--hasBackgroundImage');
     }
   }
 

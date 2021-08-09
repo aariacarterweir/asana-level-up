@@ -1,4 +1,6 @@
-*.komodoproject
-*.komodotools
-.idea
-.idea/*
+.vscode
+.yalc
+node_modules
+deploy/.rendered
+.DS_Store
+.env*
